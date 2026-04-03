@@ -21,11 +21,11 @@
 
 **Purpose**: Create the package layout, tool configuration, and baseline repo files needed by all stories.
 
-- [ ] T001 Create the package and test directory structure rooted at `src/bookcast_chapter_forge/`, `tests/unit/`, `tests/integration/`, and `tests/fixtures/pdfs/`
-- [ ] T002 Initialize runtime and test dependency metadata in `requirements.txt`
-- [ ] T003 [P] Create package marker files in `src/bookcast_chapter_forge/__init__.py`, `src/bookcast_chapter_forge/cli/__init__.py`, `src/bookcast_chapter_forge/domain/__init__.py`, `src/bookcast_chapter_forge/services/__init__.py`, `src/bookcast_chapter_forge/classifiers/__init__.py`, and `src/bookcast_chapter_forge/infrastructure/__init__.py`
-- [ ] T004 [P] Create the initial YAML configuration file in `configs/config.yaml`
-- [ ] T005 [P] Add a pytest configuration file in `pytest.ini`
+- [X] T001 Create the package and test directory structure rooted at `src/bookcast_chapter_forge/`, `tests/unit/`, `tests/integration/`, and `tests/fixtures/pdfs/`
+- [X] T002 Initialize runtime and test dependency metadata in `requirements.txt`
+- [X] T003 [P] Create package marker files in `src/bookcast_chapter_forge/__init__.py`, `src/bookcast_chapter_forge/cli/__init__.py`, `src/bookcast_chapter_forge/domain/__init__.py`, `src/bookcast_chapter_forge/services/__init__.py`, `src/bookcast_chapter_forge/classifiers/__init__.py`, and `src/bookcast_chapter_forge/infrastructure/__init__.py`
+- [X] T004 [P] Create the initial YAML configuration file in `configs/config.yaml`
+- [X] T005 [P] Add a pytest configuration file in `pytest.ini`
 
 ---
 
@@ -35,14 +35,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Create core domain dataclasses `BookDocument`, `ChapterChunk`, `ParserConfig`, and `ClassificationResult` in `src/bookcast_chapter_forge/domain/entities.py`
-- [ ] T007 [P] Create the classifier strategy interface in `src/bookcast_chapter_forge/classifiers/base.py`
-- [ ] T008 [P] Implement config loading and validation in `src/bookcast_chapter_forge/services/config_loader.py`
-- [ ] T009 [P] Implement PDF reading and page text extraction helpers in `src/bookcast_chapter_forge/infrastructure/pdf_reader.py`
-- [ ] T010 [P] Implement structured logging helpers in `src/bookcast_chapter_forge/infrastructure/logging.py`
-- [ ] T011 Implement atomic output writing with temporary directories and rollback support in `src/bookcast_chapter_forge/services/output_writer.py`
-- [ ] T012 Implement parser orchestration skeleton and cancellation-safe cleanup hooks in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T013 Implement the CLI argument parser and top-level command flow in `src/bookcast_chapter_forge/cli/pdf_parser.py`
+- [X] T006 Create core domain dataclasses `BookDocument`, `ChapterChunk`, `ParserConfig`, and `ClassificationResult` in `src/bookcast_chapter_forge/domain/entities.py`
+- [X] T007 [P] Create the classifier strategy interface in `src/bookcast_chapter_forge/classifiers/base.py`
+- [X] T008 [P] Implement config loading and validation in `src/bookcast_chapter_forge/services/config_loader.py`
+- [X] T009 [P] Implement PDF reading and page text extraction helpers in `src/bookcast_chapter_forge/infrastructure/pdf_reader.py`
+- [X] T010 [P] Implement structured logging helpers in `src/bookcast_chapter_forge/infrastructure/logging.py`
+- [X] T011 Implement atomic output writing with temporary directories and rollback support in `src/bookcast_chapter_forge/services/output_writer.py`
+- [X] T012 Implement parser orchestration skeleton and cancellation-safe cleanup hooks in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T013 Implement the CLI argument parser and top-level command flow in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 
 **Checkpoint**: Foundation ready. User story implementation can now begin.
 
@@ -58,19 +58,19 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T014 [P] [US1] Add config loader tests for fixed-page settings in `tests/unit/test_config_loader.py`
-- [ ] T015 [P] [US1] Add fixed-page classifier unit tests for chunk boundary generation in `tests/unit/test_fixed_page_classifier.py`
-- [ ] T016 [P] [US1] Add output writer unit tests for atomic success and rollback behavior in `tests/unit/test_output_writer.py`
-- [ ] T017 [P] [US1] Add CLI integration test for splitting a two-page sample PDF in `tests/integration/test_pdf_parser_cli.py`
-- [ ] T018 [P] [US1] Add parser service integration test for single-file processing in `tests/integration/test_pdf_parser_service.py`
+- [X] T014 [P] [US1] Add config loader tests for fixed-page settings in `tests/unit/test_config_loader.py`
+- [X] T015 [P] [US1] Add fixed-page classifier unit tests for chunk boundary generation in `tests/unit/test_fixed_page_classifier.py`
+- [X] T016 [P] [US1] Add output writer unit tests for atomic success and rollback behavior in `tests/unit/test_output_writer.py`
+- [X] T017 [P] [US1] Add CLI integration test for splitting a two-page sample PDF in `tests/integration/test_pdf_parser_cli.py`
+- [X] T018 [P] [US1] Add parser service integration test for single-file processing in `tests/integration/test_pdf_parser_service.py`
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] Implement `FixedPageClassifier` in `src/bookcast_chapter_forge/classifiers/fixed_page_classifier.py`
-- [ ] T020 [US1] Implement single-file PDF validation and fixed-page chunk generation in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T021 [US1] Implement fixed-page CLI execution flow and progress output in `src/bookcast_chapter_forge/cli/pdf_parser.py`
-- [ ] T022 [US1] Implement deterministic output file naming `{input file name}-{order number}.pdf` in `src/bookcast_chapter_forge/services/output_writer.py`
-- [ ] T023 [US1] Add interrupt handling for `Ctrl-C` with final output rollback in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T019 [US1] Implement `FixedPageClassifier` in `src/bookcast_chapter_forge/classifiers/fixed_page_classifier.py`
+- [X] T020 [US1] Implement single-file PDF validation and fixed-page chunk generation in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T021 [US1] Implement fixed-page CLI execution flow and progress output in `src/bookcast_chapter_forge/cli/pdf_parser.py`
+- [X] T022 [US1] Implement deterministic output file naming `{input file name}-{order number}.pdf` in `src/bookcast_chapter_forge/services/output_writer.py`
+- [X] T023 [US1] Add interrupt handling for `Ctrl-C` with final output rollback in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 
 **Checkpoint**: User Story 1 is fully functional as the MVP.
 
@@ -84,19 +84,19 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T024 [P] [US2] Add unit tests for regex-driven chapter boundary detection in `tests/unit/test_regex_chapter_classifier.py`
-- [ ] T025 [P] [US2] Add unit tests for PDF book validation and English-language heuristics in `tests/unit/test_regex_chapter_classifier.py`
-- [ ] T026 [P] [US2] Add integration test for folder-based processing through `books/` in `tests/integration/test_pdf_parser_service.py`
-- [ ] T027 [P] [US2] Add CLI integration test for regex strategy selection in `tests/integration/test_pdf_parser_cli.py`
+- [X] T024 [P] [US2] Add unit tests for regex-driven chapter boundary detection in `tests/unit/test_regex_chapter_classifier.py`
+- [X] T025 [P] [US2] Add unit tests for PDF book validation and English-language heuristics in `tests/unit/test_regex_chapter_classifier.py`
+- [X] T026 [P] [US2] Add integration test for folder-based processing through `books/` in `tests/integration/test_pdf_parser_service.py`
+- [X] T027 [P] [US2] Add CLI integration test for regex strategy selection in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Extend `configs/config.yaml` with the regex strategy section for book, language, chapter start/end, and book start/end patterns
-- [ ] T029 [US2] Implement `RegexChapterClassifier` in `src/bookcast_chapter_forge/classifiers/regex_chapter_classifier.py`
-- [ ] T030 [US2] Add strategy selection and regex classifier integration to `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T031 [US2] Add `books/` directory batch processing support to `src/bookcast_chapter_forge/cli/pdf_parser.py`
-- [ ] T032 [US2] Add progress logging for page scanning and identified chapter boundaries in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T033 [US2] Enforce “PDF and book only” validation before writing outputs in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T028 [US2] Extend `configs/config.yaml` with the regex strategy section for book, language, chapter start/end, and book start/end patterns
+- [X] T029 [US2] Implement `RegexChapterClassifier` in `src/bookcast_chapter_forge/classifiers/regex_chapter_classifier.py`
+- [X] T030 [US2] Add strategy selection and regex classifier integration to `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T031 [US2] Add `books/` directory batch processing support to `src/bookcast_chapter_forge/cli/pdf_parser.py`
+- [X] T032 [US2] Add progress logging for page scanning and identified chapter boundaries in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T033 [US2] Enforce “PDF and book only” validation before writing outputs in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
@@ -110,19 +110,19 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T034 [P] [US3] Add unit tests for index-page identification and entry parsing in `tests/unit/test_index_chapter_classifier.py`
-- [ ] T035 [P] [US3] Add unit tests for page-offset calculation and chapter-name extraction in `tests/unit/test_index_chapter_classifier.py`
-- [ ] T036 [P] [US3] Add unit tests for filename sanitization and chapter-name truncation in `tests/unit/test_output_writer.py`
-- [ ] T037 [P] [US3] Add CLI integration test for index strategy execution in `tests/integration/test_pdf_parser_cli.py`
+- [X] T034 [P] [US3] Add unit tests for index-page identification and entry parsing in `tests/unit/test_index_chapter_classifier.py`
+- [X] T035 [P] [US3] Add unit tests for page-offset calculation and chapter-name extraction in `tests/unit/test_index_chapter_classifier.py`
+- [X] T036 [P] [US3] Add unit tests for filename sanitization and chapter-name truncation in `tests/unit/test_output_writer.py`
+- [X] T037 [P] [US3] Add CLI integration test for index strategy execution in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] Extend `configs/config.yaml` with index-page and index-entry regex configuration
-- [ ] T039 [US3] Implement `IndexChapterClassifier` in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
-- [ ] T040 [US3] Add index strategy wiring and offset-based chunk generation to `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T041 [US3] Add chapter-name-aware output naming `{input file name}-{order number}-{chapter name (max 10 characters)}.pdf` in `src/bookcast_chapter_forge/services/output_writer.py`
-- [ ] T042 [US3] Update the CLI strategy selector and user-facing progress output for index classification in `src/bookcast_chapter_forge/cli/pdf_parser.py`
-- [ ] T043 [US3] Abort processing with a clear error when no valid index page is identified in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
+- [X] T038 [US3] Extend `configs/config.yaml` with index-page and index-entry regex configuration
+- [X] T039 [US3] Implement `IndexChapterClassifier` in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
+- [X] T040 [US3] Add index strategy wiring and offset-based chunk generation to `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T041 [US3] Add chapter-name-aware output naming `{input file name}-{order number}-{chapter name (max 10 characters)}.pdf` in `src/bookcast_chapter_forge/services/output_writer.py`
+- [X] T042 [US3] Update the CLI strategy selector and user-facing progress output for index classification in `src/bookcast_chapter_forge/cli/pdf_parser.py`
+- [X] T043 [US3] Abort processing with a clear error when no valid index page is identified in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
 
 **Checkpoint**: All user stories are independently functional.
 
@@ -132,11 +132,11 @@
 
 **Purpose**: Final cleanup, validation, and documentation across all stories.
 
-- [ ] T044 [P] Update CLI usage and configuration documentation in `README.md`
-- [ ] T045 [P] Add JSON summary output support in `src/bookcast_chapter_forge/cli/pdf_parser.py`
-- [ ] T046 Normalize end-to-end error reporting in `src/bookcast_chapter_forge/cli/pdf_parser.py` and `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T047 [P] Add missing edge-case coverage in `tests/unit/test_config_loader.py` and `tests/unit/test_output_writer.py`
-- [ ] T048 Run and verify the full test suite from `tests/unit/` and `tests/integration/`
+- [X] T044 [P] Update CLI usage and configuration documentation in `README.md`
+- [X] T045 [P] Add JSON summary output support in `src/bookcast_chapter_forge/cli/pdf_parser.py`
+- [X] T046 Normalize end-to-end error reporting in `src/bookcast_chapter_forge/cli/pdf_parser.py` and `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T047 [P] Add missing edge-case coverage in `tests/unit/test_config_loader.py` and `tests/unit/test_output_writer.py`
+- [X] T048 Run and verify the full test suite from `tests/unit/` and `tests/integration/`
 
 ---
 

@@ -1,0 +1,26 @@
+fixed_page:
+  max_pages_per_chunk: 1
+
+regex:
+  book_patterns:
+    - '(?i)chapter'
+  english_patterns:
+    - '(?i)the'
+    - '(?i)and'
+  chapter_start_patterns:
+    - '(?i)^chapter\\s+[0-9ivxlcdm]+'
+    - '(?i)^(genesis|exodus|leviticus|numbers|deuteronomy|joshua|judges|ruth|1\\s+samuel|2\\s+samuel|1\\s+kings|2\\s+kings|1\\s+chronicles|2\\s+chronicles|ezra|nehemiah|esther|job|psalms|proverbs|ecclesiastes|song\\s+of\\s+solomon|isaiah|jeremiah|lamentations|ezekiel|daniel|hosea|joel|amos|obadiah|jonah|micah|nahum|habakkuk|zephaniah|haggai|zechariah|malachi|matthew|mark|luke|john|acts|romans|1\\s+corinthians|2\\s+corinthians|galatians|ephesians|philippians|colossians|1\\s+thessalonians|2\\s+thessalonians|1\\s+timothy|2\\s+timothy|titus|philemon|hebrews|james|1\\s+peter|2\\s+peter|1\\s+john|2\\s+john|3\\s+john|jude|revelation)\\b'
+  chapter_end_patterns:
+    - '(?i)amen\\s*$'
+  book_start_patterns:
+    - '(?i)^(title|contents|preface|foreword|chapter\\s+[0-9ivxlcdm]+)'
+  book_end_patterns:
+    - '(?i)^(appendix|index|glossary|the\\s+end)'
+
+index:
+  index_title_patterns:
+    - '(?i)^contents$'
+    - '(?i)^table\\s+of\\s+contents$'
+    - '(?i)^index$'
+  entry_patterns:
+    - '^(?P<title>.+?)[\\s.·_-]+(?P<page>\\d+)$'
