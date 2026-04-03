@@ -281,6 +281,10 @@ get_language_conventions() {
     echo "$lang: Follow standard conventions"
 }
 
+escape_sed_replacement() {
+    printf '%s\n' "$1" | sed -e 's/[&|]/\\&/g'
+}
+
 create_new_agent_file() {
     local target_file="$1"
     local temp_file="$2"
@@ -313,6 +317,10 @@ create_new_agent_file() {
     
     local language_conventions
     language_conventions=$(get_language_conventions "$NEW_LANG")
+
+    project_structure=$(escape_sed_replacement "$project_structure")
+    commands=$(escape_sed_replacement "$commands")
+    language_conventions=$(escape_sed_replacement "$language_conventions")
     
     # Perform substitutions with error checking using safer approach
     # Escape special characters for sed by using a different delimiter or escaping
@@ -342,6 +350,9 @@ create_new_agent_file() {
     else
         recent_change="- $escaped_branch: Added"
     fi
+
+    tech_stack=$(escape_sed_replacement "$tech_stack")
+    recent_change=$(escape_sed_replacement "$recent_change")
 
     local substitutions=(
         "s|\[PROJECT NAME\]|$project_name|"
