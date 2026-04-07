@@ -188,6 +188,7 @@ class IndexChapterClassifier(ChapterClassifier):
         toc_page_indices: list[int],
         config: ParserConfig,
     ) -> list[TocEntry]:
+        """Collect TOC titles from text first, then enrich only those titles with page targets."""
         text_entries = self._parse_entries_from_text_pages(book, toc_page_indices, config)
         annotation_entries = self._parse_entries_from_annotations(book, reader, toc_page_indices, config)
         outline_entries = self._parse_entries_from_outline(reader, config)
@@ -307,6 +308,7 @@ class IndexChapterClassifier(ChapterClassifier):
         annotation_entries: list[TocEntry],
         outline_entries: list[TocEntry],
     ) -> list[TocEntry]:
+        """Supplement parsed TOC titles with targets; never invent extra chunk titles from metadata alone."""
         merged = list(text_entries)
         for source_entry in annotation_entries + outline_entries:
             normalized_annotation = _normalize_title(source_entry.title)
@@ -319,11 +321,16 @@ class IndexChapterClassifier(ChapterClassifier):
                 None,
             )
             if merged_index is None:
-                merged.append(source_entry)
                 continue
 
             existing = merged[merged_index]
             if existing.actual_page is not None and source_entry.actual_page is not None:
+                if (source_entry.actual_page or 0) > (existing.actual_page or 0):
+                    merged[merged_index] = TocEntry(
+                        title=existing.title if len(existing.title) >= len(source_entry.title) else source_entry.title,
+                        page_token=existing.page_token or source_entry.page_token,
+                        actual_page=source_entry.actual_page,
+                    )
                 continue
             merged[merged_index] = TocEntry(
                 title=existing.title if len(existing.title) >= len(source_entry.title) else source_entry.title,
@@ -464,12 +471,10 @@ class IndexChapterClassifier(ChapterClassifier):
         return TocEntry(title=title, page_token=fallback.group("page"))
 
     def _parse_title_only_entry_line(self, line: str, config: ParserConfig) -> TocEntry | None:
+        """Accept title-only TOC lines only when they look like numbered chapter entries."""
         title = self._clean_title(line)
         if not title:
             return None
-        normalized = _normalize_title(title)
-        if normalized in MAJOR_FRONT_MATTER_TITLES:
-            return TocEntry(title=title)
         chapter_patterns = tuple(pattern for pattern in config.regex_chapter_start_patterns if "introduction" not in pattern.lower() and "conclusion" not in pattern.lower())
         if any(re.search(pattern, title) for pattern in chapter_patterns):
             return TocEntry(title=title)

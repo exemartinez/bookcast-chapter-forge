@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-pdf-chapter-classifier`  
 **Created**: 2026-04-03  
-**Status**: Draft  
+**Status**: Closed in `v0.1.0`  
 **Input**: User description: "$ARGUMENTS"
 
 ## User Scenarios & Testing *(mandatory)*
@@ -63,12 +63,16 @@ As a user, I want the parser to detect chapter boundaries from a generic table o
 The index-based classifier must:
 
 - look for `Contents`, `Table of Contents`, or equivalent generic English contents-page signals
-- parse chapter titles and printed page numbers from common contents layouts, including Roman-numeral front matter
+- collect the chapter titles and their printed TOC page references from that TOC-like page group
 - infer the offset between printed page numbers and PDF page indices without one-page drift on ordinary books
-- use PDF hyperlink or annotation destinations when a contents page is clickable and printed page numbers are not extractable from text
-- map contents entries back to actual PDF pages using a local page window around each candidate chapter start rather than whole-document title scanning
-- determine chapter bounds by pairing each TOC entry with the next TOC entry, and by treating the end of the book as the final upper bound when no next chapter exists
-- search candidate windows with heading-priority logic that prefers the largest-font text on the page when looking for a chapter heading
+- when a TOC is clickable and printed page numbers are not extractable from text, use hyperlink or annotation destinations only to fill the missing page target for an already-detected TOC title rather than inventing extra titles
+- pair each TOC title with the next TOC title, and treat the end of the book as the final upper bound when there is no next title
+- compute a candidate PDF page for the current TOC title from its TOC page reference plus the inferred offset
+- search only within a bounded local window of `candidate page - 10` through `candidate page + 10`
+- within that local window, search from the beginning and prefer the largest-font text on each page when locating the first occurrence of the current TOC title; that page becomes the begin page
+- resolve the next TOC title in the same way inside its own local window
+- when the next title page contains any text before the matched title, use that page as the end page; otherwise use the previous page as the end page
+- avoid whole-document title scanning for the primary chunk-resolution flow
 - use the strategy pattern so `fixed`, `regex`, and `index` remain selectable modes
 - name outputs as `{input-file-name}-{order-number}-{chapter-name}.pdf`, with safe filename normalization and chapter-name truncation
 - remain generic and must not depend on a domain-specific catalog such as Bible book names
@@ -85,6 +89,7 @@ The index-based classifier must:
 4. **Given** a contents page with Roman-numeral front matter entries, **When** running the parser with `index` strategy, **Then** those entries are mapped to the correct PDF pages
 5. **Given** a clickable contents page whose visible text omits printed page numbers, **When** running the parser with `index` strategy, **Then** the parser derives chapter starts from hyperlink destinations instead of failing scope
 6. **Given** two nearby chapter titles or repeated title words elsewhere in the book, **When** running the parser with `index` strategy, **Then** the parser uses the TOC-derived local window to avoid matching a distant false positive
+7. **Given** a PDF outline or clickable TOC that contains extra front-matter or back-matter items that do not correspond to the parsed TOC chapter list, **When** running the parser with `index` strategy, **Then** those extra items do not create additional chunks on their own
 
 ---
 
@@ -116,6 +121,7 @@ The index-based classifier must:
 - **FR-012**: System MUST locate chapter starts for the index strategy by searching within a bounded local window around each TOC-derived candidate page.
 - **FR-013**: System MUST prefer heading-like text with larger font size when identifying chapter-title matches inside that local window.
 - **FR-014**: System MUST derive each chunk end from the next chapter’s resolved location, or the end of the book when no next chapter exists.
+- **FR-015**: System MUST treat TOC text as the source of truth for which titles are chunked; hyperlink or outline metadata may supplement page targets for those titles but must not invent unrelated extra chunks.
 - **FR-008**: System MUST fail with a clear validation error when it cannot confidently classify a document as a chaptered English book for the selected strategy.
 
 ### Key Entities *(include if feature involves data)*
@@ -140,3 +146,18 @@ The index-based classifier must:
 - The application runs as a CLI in a Unix-like shell.
 - Initial generic chapter detection scope is English-language books only.
 - Domain-specific profiles may be added later, but they are out of scope for the default generic classifier.
+
+## Implementation Outcome
+
+Feature `001-pdf-chapter-classifier` is closed as the `v0.1.0` baseline.
+
+Implemented behavior:
+
+- `fixed` works as a deterministic page-count splitter
+- `regex` works as a generic English-book heading detector for some PDFs with consistent chapter structure
+- `index` works as a best-effort TOC-driven chunker for some PDFs that expose usable TOC text, hyperlinks, outlines, or heading typography
+
+Known shortcoming:
+
+- `index` remains dependent on PDF makeup and is not universally reliable for arbitrary books
+- some PDFs pass, some partially pass, and some fail for reasons tied to the source document rather than only the code

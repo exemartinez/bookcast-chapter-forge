@@ -101,9 +101,9 @@ tests/
   - repeated heading layouts across pages
   - title-only heading pages
   - configurable structural patterns in `config.yaml`
-- Parse contents pages generically from common English TOC layouts.
+- Parse contents pages generically from common English TOC layouts and treat the parsed TOC text as the authoritative list of chunk titles.
 - Support Roman-numeral contents entries for front matter and similar sections.
-- Fall back to clickable TOC hyperlink destinations when text extraction does not expose printable page numbers.
+- Fall back to clickable TOC hyperlink destinations when text extraction does not expose printable page numbers, but only to fill targets for titles already found in TOC text.
 - Infer offsets from multiple anchors so a single title-page mismatch does not shift the whole book by one page.
 - Resolve each TOC entry inside a bounded candidate window around the inferred page instead of scanning the entire document.
 - Use page-local heading extraction that favors larger-font text when matching chapter titles inside that window.
@@ -143,8 +143,8 @@ tests/
 
 - Keep fixed-page strategy intact.
 - Refactor regex classifier to remove domain-specific hardcoded title catalogs.
-- Refactor index classifier to parse generic contents pages and map entries back to actual PDF pages.
-- Refactor index classifier to resolve TOC entries from text, page labels, and hyperlink destinations, then reconcile them with robust offset inference.
+- Refactor index classifier to parse generic contents pages and use that TOC text as the authoritative chunk list.
+- Refactor index classifier to resolve TOC entries from text, page labels, and hyperlink destinations, but only as supplements for already-parsed TOC titles.
 - Build chunk boundaries by resolving the current entry and the next entry separately inside local search windows and deriving page ranges from that pair.
 - Update validation, logging, and output naming as needed.
 
@@ -154,6 +154,7 @@ tests/
 - Add tests for generic TOC-based books.
 - Add tests for Roman-numeral TOC entries, clickable TOC entries, and off-by-one offset regressions.
 - Add tests for local-window heading resolution so nearby repeated titles do not capture the wrong distant page.
+- Add tests that extra outline-only or annotation-only entries do not create unwanted chunks.
 - Keep failure-mode tests for invalid PDFs, non-book-like inputs, and rollback behavior.
 
 ## Test-First Execution Order
