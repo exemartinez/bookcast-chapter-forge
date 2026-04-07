@@ -7,6 +7,8 @@ from bookcast_chapter_forge.cli.pdf_parser import main
 
 
 def test_cli_splits_a_two_page_pdf(blank_pdf_factory, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("fixed_page:\n  max_pages_per_chunk: 1\n", encoding="utf-8")
     pdf_path = blank_pdf_factory("cli.pdf", 2)
 
     exit_code = main(
@@ -14,7 +16,7 @@ def test_cli_splits_a_two_page_pdf(blank_pdf_factory, tmp_path: Path) -> None:
             "--input",
             str(pdf_path),
             "--config",
-            "configs/config.yaml",
+            str(config_path),
             "--strategy",
             "fixed",
             "--output-dir",

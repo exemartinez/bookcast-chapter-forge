@@ -23,15 +23,19 @@ class StubPdfReader:
 
 
 def test_processes_single_pdf_in_fixed_mode(blank_pdf_factory, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("fixed_page:\n  max_pages_per_chunk: 1\n", encoding="utf-8")
     pdf_path = blank_pdf_factory("single.pdf", 2)
     service = PdfParserService(output_writer=OutputWriter(output_dir=tmp_path / "out"))
 
-    processed = service.process("fixed", "configs/config.yaml", input_path=pdf_path)
+    processed = service.process("fixed", config_path, input_path=pdf_path)
 
     assert processed[0].chunk_count == 2
 
 
 def test_processes_all_pdfs_in_books_dir(blank_pdf_factory, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("fixed_page:\n  max_pages_per_chunk: 2\n", encoding="utf-8")
     books_dir = tmp_path / "books"
     books_dir.mkdir()
     blank_pdf_factory("first.pdf", 1).replace(books_dir / "first.pdf")
@@ -42,6 +46,6 @@ def test_processes_all_pdfs_in_books_dir(blank_pdf_factory, tmp_path: Path) -> N
         classifiers={"fixed": StubClassifier(), "regex": StubClassifier(), "index": StubClassifier()},
     )
 
-    processed = service.process("regex", "configs/config.yaml", books_dir=books_dir)
+    processed = service.process("regex", config_path, books_dir=books_dir)
 
     assert len(processed) == 2

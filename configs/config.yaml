@@ -1,5 +1,5 @@
 fixed_page:
-  max_pages_per_chunk: 1
+  max_pages_per_chunk: 15
 
 regex:
   book_patterns:

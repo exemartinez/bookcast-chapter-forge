@@ -18,6 +18,10 @@ Every library exposes functionality via CLI; Text in/out protocol: stdin/args �
 
 ### III. Test-First (NON-NEGOTIABLE)
 TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced. Mock and Stub functionality that isn't present; respect interfaces. 
+Tests must not require mutating valid user data files or valid user configuration files just to pass.
+Refactors and bugfixes must adapt code or test-owned fixtures, not repository user inputs, unless the data or configuration is objectively invalid by definition.
+Any integration or end-to-end test that depends on large real-world inputs or takes noticeable time must be explicitly marked as a slow test.
+Default test runs must remain fast; slow tests should run only when explicitly requested.
 
 ### V. Observability
 Structured logging required
@@ -34,4 +38,4 @@ Python 3.9+ plus libraries.
 ## Governance
 Constitution supersedes all other practices; Amendments require documentation, approval, migration plan.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-07
+**Version**: 1.3.0 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-07
