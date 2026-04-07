@@ -105,6 +105,8 @@ tests/
 - Support Roman-numeral contents entries for front matter and similar sections.
 - Fall back to clickable TOC hyperlink destinations when text extraction does not expose printable page numbers.
 - Infer offsets from multiple anchors so a single title-page mismatch does not shift the whole book by one page.
+- Resolve each TOC entry inside a bounded candidate window around the inferred page instead of scanning the entire document.
+- Use page-local heading extraction that favors larger-font text when matching chapter titles inside that window.
 - If domain-specific profiles are needed later, isolate them as explicit optional profiles rather than default behavior.
 
 ### CLI Surface
@@ -120,7 +122,7 @@ tests/
 2. P2 generic regex classifier:
    Replace corpus-specific fallback behavior with generic English-book heading detection.
 3. P3 generic index classifier:
-   Implement generic contents-page parsing, Roman-numeral support, hyperlink-aware TOC mapping, and robust page-offset matching for English books.
+   Implement generic contents-page parsing, Roman-numeral support, hyperlink-aware TOC mapping, robust page-offset matching, and windowed heading resolution for English books.
 
 ## Work Plan
 
@@ -143,6 +145,7 @@ tests/
 - Refactor regex classifier to remove domain-specific hardcoded title catalogs.
 - Refactor index classifier to parse generic contents pages and map entries back to actual PDF pages.
 - Refactor index classifier to resolve TOC entries from text, page labels, and hyperlink destinations, then reconcile them with robust offset inference.
+- Build chunk boundaries by resolving the current entry and the next entry separately inside local search windows and deriving page ranges from that pair.
 - Update validation, logging, and output naming as needed.
 
 ### Phase 3 Verification
@@ -150,6 +153,7 @@ tests/
 - Add tests for generic books with chapter headings.
 - Add tests for generic TOC-based books.
 - Add tests for Roman-numeral TOC entries, clickable TOC entries, and off-by-one offset regressions.
+- Add tests for local-window heading resolution so nearby repeated titles do not capture the wrong distant page.
 - Keep failure-mode tests for invalid PDFs, non-book-like inputs, and rollback behavior.
 
 ## Test-First Execution Order

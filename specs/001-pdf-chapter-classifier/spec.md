@@ -66,7 +66,9 @@ The index-based classifier must:
 - parse chapter titles and printed page numbers from common contents layouts, including Roman-numeral front matter
 - infer the offset between printed page numbers and PDF page indices without one-page drift on ordinary books
 - use PDF hyperlink or annotation destinations when a contents page is clickable and printed page numbers are not extractable from text
-- map contents entries back to actual PDF pages
+- map contents entries back to actual PDF pages using a local page window around each candidate chapter start rather than whole-document title scanning
+- determine chapter bounds by pairing each TOC entry with the next TOC entry, and by treating the end of the book as the final upper bound when no next chapter exists
+- search candidate windows with heading-priority logic that prefers the largest-font text on the page when looking for a chapter heading
 - use the strategy pattern so `fixed`, `regex`, and `index` remain selectable modes
 - name outputs as `{input-file-name}-{order-number}-{chapter-name}.pdf`, with safe filename normalization and chapter-name truncation
 - remain generic and must not depend on a domain-specific catalog such as Bible book names
@@ -82,6 +84,7 @@ The index-based classifier must:
 3. **Given** a book with chapter names that contain spaces or punctuation, **When** output files are created, **Then** filenames are sanitized and truncated safely
 4. **Given** a contents page with Roman-numeral front matter entries, **When** running the parser with `index` strategy, **Then** those entries are mapped to the correct PDF pages
 5. **Given** a clickable contents page whose visible text omits printed page numbers, **When** running the parser with `index` strategy, **Then** the parser derives chapter starts from hyperlink destinations instead of failing scope
+6. **Given** two nearby chapter titles or repeated title words elsewhere in the book, **When** running the parser with `index` strategy, **Then** the parser uses the TOC-derived local window to avoid matching a distant false positive
 
 ---
 
@@ -110,6 +113,9 @@ The index-based classifier must:
 - **FR-009**: System MUST support Roman-numeral contents entries when mapping front matter or other non-Arabic page labels.
 - **FR-010**: System MUST use hyperlink or annotation destinations from clickable contents pages when that is the only reliable source of chapter targets.
 - **FR-011**: System MUST infer contents-to-PDF page offsets robustly enough to avoid systematic one-page drift on successful runs.
+- **FR-012**: System MUST locate chapter starts for the index strategy by searching within a bounded local window around each TOC-derived candidate page.
+- **FR-013**: System MUST prefer heading-like text with larger font size when identifying chapter-title matches inside that local window.
+- **FR-014**: System MUST derive each chunk end from the next chapter’s resolved location, or the end of the book when no next chapter exists.
 - **FR-008**: System MUST fail with a clear validation error when it cannot confidently classify a document as a chaptered English book for the selected strategy.
 
 ### Key Entities *(include if feature involves data)*

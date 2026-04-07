@@ -30,7 +30,18 @@ def test_sanitizes_and_truncates_titles() -> None:
         chunk=ChapterChunk(order=1, start_page=1, end_page=2, title="Chapter: Alpha/Beta"),
     )
 
-    assert filename == "My-Book-001-Chapter-Al.pdf"
+    assert filename == "My-Book-001-Chapter-Alpha.pdf"
+
+
+def test_preserves_chapter_numerals_in_filename_slug() -> None:
+    writer = OutputWriter(output_dir="output")
+
+    filename = writer.filename_for_chunk(
+        book=type("Book", (), {"stem": "My Book"})(),
+        chunk=ChapterChunk(order=7, start_page=1, end_page=2, title="Chapter VII: Prompting with LangChain"),
+    )
+
+    assert filename == "My-Book-007-Chapter-VII.pdf"
 
 
 def test_cleans_up_temp_output_on_failure(blank_pdf_factory, book_document_factory, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -44,7 +44,7 @@ class OutputWriter:
     def filename_for_chunk(self, book: BookDocument, chunk: ChapterChunk) -> str:
         base = f"{self.sanitize_filename(book.stem)}-{chunk.order:03d}"
         if chunk.title:
-            title = self.sanitize_filename(chunk.title)[:10].rstrip("-")
+            title = self.shorten_title_slug(self.sanitize_filename(chunk.title))
             if title:
                 base = f"{base}-{title}"
         return f"{base}.pdf"
@@ -53,3 +53,9 @@ class OutputWriter:
         normalized = re.sub(r"[^A-Za-z0-9]+", "-", value.strip())
         normalized = re.sub(r"-+", "-", normalized).strip("-")
         return normalized or "chunk"
+
+    def shorten_title_slug(self, value: str) -> str:
+        parts = value.split("-")
+        if len(parts) >= 2 and parts[0].lower() in {"chapter", "part", "section", "book"}:
+            return "-".join(parts[:2])[:20].rstrip("-")
+        return value[:20].rstrip("-")
