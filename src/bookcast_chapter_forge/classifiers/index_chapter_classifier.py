@@ -3,17 +3,11 @@ from __future__ import annotations
 import re
 
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
-from bookcast_chapter_forge.classifiers.regex_chapter_classifier import KNOWN_BOOK_TITLES, _first_non_empty_line, _normalize_title
+from bookcast_chapter_forge.classifiers.regex_chapter_classifier import _first_non_empty_line, _normalize_title
 from bookcast_chapter_forge.domain.entities import BookDocument, ChapterChunk, ClassificationResult, ParserConfig
-
-CANONICAL_BOOK_TITLES = {title: title.title() for title in KNOWN_BOOK_TITLES}
-CANONICAL_BOOK_TITLES["song of songs"] = "Song of Songs"
 
 
 class IndexChapterClassifier(ChapterClassifier):
-    def __init__(self) -> None:
-        self._regex_classifier = None
-
     @property
     def strategy_name(self) -> str:
         return "index"
@@ -21,13 +15,6 @@ class IndexChapterClassifier(ChapterClassifier):
     def classify(self, book: BookDocument, config: ParserConfig) -> ClassificationResult:
         index_page_text = self._find_index_page_text(book, config)
         entries = self._parse_entries(index_page_text, config)
-        canonical_entries = [
-            (CANONICAL_BOOK_TITLES[_normalize_title(title)], page)
-            for title, page in entries
-            if _normalize_title(title) in CANONICAL_BOOK_TITLES
-        ]
-        if len(canonical_entries) >= 10:
-            entries = canonical_entries
         if not entries:
             raise ValueError("No index entries could be parsed from the document")
 
@@ -45,7 +32,7 @@ class IndexChapterClassifier(ChapterClassifier):
             if 1 <= actual_page <= book.page_count:
                 located_entries.append((title, actual_page))
 
-        if not located_entries:
+        if len(located_entries) < 2:
             raise ValueError("No chapter starts could be located from the parsed index entries")
 
         deduped: list[tuple[str, int]] = []
@@ -66,11 +53,11 @@ class IndexChapterClassifier(ChapterClassifier):
         return ClassificationResult(chunks=tuple(chunks), metadata=metadata)
 
     def _find_index_page_text(self, book: BookDocument, config: ParserConfig) -> str:
-        candidates = list(range(min(10, book.page_count))) + list(range(max(0, book.page_count - 10), book.page_count))
+        candidates = list(range(min(12, book.page_count))) + list(range(max(0, book.page_count - 12), book.page_count))
         for index in dict.fromkeys(candidates):
             text = book.page_texts[index]
             lines = [line.strip() for line in text.splitlines() if line.strip()]
-            head_lines = lines[:3]
+            head_lines = lines[:4]
             if any(re.search(pattern, line) for pattern in config.index_title_patterns for line in head_lines):
                 return text
             if any("contents" in line.lower() or line.lower() == "index" for line in head_lines):
@@ -96,27 +83,27 @@ class IndexChapterClassifier(ChapterClassifier):
                 if fallback_page:
                     title = self._clean_title(line[: fallback_page.start()])
                     page = int(fallback_page.group("page"))
-                    if title:
+                    if len(_normalize_title(title)) >= 3:
                         entries.append((title, page))
         return entries
 
     def _clean_title(self, value: str) -> str:
-        value = re.split(r"(?:\s\.\s){2,}|\.{2,}", value)[0]
-        value = re.sub(r"\s+", " ", value).strip(" .-_")
-        for token in ["  Gn", "  Ex", "  Lv", "  Nm", "  Dt", "  Jos", "  Jdg", "  Ru", "  1Sm", "  2Sm", "  1Kg", "  2Kg", "  1Ch", "  2Ch", "  Ezr", "  Neh", "  Est", "  Jb", "  Ps", "  Pr", "  Ec", "  Sg", "  Is", "  Jr", "  Lm", "  Ezk", "  Dn", "  Hs", "  Jl", "  Am", "  Ob", "  Jnh", "  Mc", "  Nah", "  Hab", "  Zph", "  Hg", "  Zch", "  Mal", "  Mt", "  Mk", "  Lk", "  Jn", "  Ac", "  Rm", "  1Co", "  2Co", "  Gl", "  Eph", "  Php", "  Col", "  1T h", "  2Th", "  1T m", "  2Tm", "  Ti", "  Phm", "  Heb", "  Jms", "  1Pt", "  2Pt", "  1Jn", "  2Jn", "  3Jn", "  Jd", "  Rv"]:
-            if value.endswith(token):
-                value = value[: -len(token)].strip(" .-_")
-        normalized = _normalize_title(value)
-        for known_title, canonical in sorted(CANONICAL_BOOK_TITLES.items(), key=lambda item: len(item[0]), reverse=True):
-            if normalized.startswith(known_title):
-                return canonical
-        return value
+        normalized = value.replace("\u00b7", ".")
+        normalized = re.sub(r"(?:\s\.\s){2,}", "|", normalized)
+        normalized = re.sub(r"[._-]{3,}", "|", normalized)
+        segments = [re.sub(r"\s+", " ", part).strip(" .-_") for part in normalized.split("|")]
+        segments = [segment for segment in segments if segment]
+        if not segments:
+            return ""
+        return segments[0]
 
     def _find_title_page(self, book: BookDocument, title: str) -> int | None:
         normalized_title = _normalize_title(title)
         for page_number, text in enumerate(book.page_texts, start=1):
             first_line = _normalize_title(_first_non_empty_line(text))
-            prefix = _normalize_title(" ".join(text.splitlines()[:2]))
+            prefix = _normalize_title(" ".join(text.splitlines()[:4]))
             if first_line.startswith(normalized_title) or prefix.startswith(normalized_title):
+                return page_number
+            if normalized_title in prefix and len(normalized_title.split()) >= 3:
                 return page_number
         return None

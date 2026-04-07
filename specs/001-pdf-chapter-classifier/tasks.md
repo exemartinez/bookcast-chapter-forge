@@ -76,50 +76,50 @@
 
 ---
 
-## Phase 4: User Story 2 - Regex-Based Chapter Classification (Priority: P2)
+## Phase 4: User Story 2 - Generic Regex-Based Chapter Classification (Priority: P2)
 
-**Goal**: Add a `ChapterClassifier`-driven mode that identifies logical chapter boundaries using configurable regex patterns and can process all PDFs in `books/`.
+**Goal**: Add a generic `ChapterClassifier`-driven mode that identifies chapter boundaries for English books without relying on domain-specific hardcoded title catalogs.
 
-**Independent Test**: Run the CLI in regex mode against `books/CSB_Pew_Bible_2nd_Printing.pdf` and verify that it produces 66 non-empty output PDFs.
+**Independent Test**: Run the CLI in regex mode against at least one general English book with ordinary chapter headings and verify that output chunks start at real chapter boundaries.
 
 ### Tests for User Story 2 ⚠️
 
-- [X] T024 [P] [US2] Add unit tests for regex-driven chapter boundary detection in `tests/unit/test_regex_chapter_classifier.py`
-- [X] T025 [P] [US2] Add unit tests for PDF book validation and English-language heuristics in `tests/unit/test_regex_chapter_classifier.py`
+- [X] T024 [P] [US2] Add unit tests for generic heading-pattern chapter detection in `tests/unit/test_regex_chapter_classifier.py`
+- [X] T025 [P] [US2] Add unit tests proving the default regex strategy does not depend on domain-specific hardcoded title catalogs in `tests/unit/test_regex_chapter_classifier.py`
 - [X] T026 [P] [US2] Add integration test for folder-based processing through `books/` in `tests/integration/test_pdf_parser_service.py`
 - [X] T027 [P] [US2] Add CLI integration test for regex strategy selection in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 2
 
-- [X] T028 [US2] Extend `configs/config.yaml` with the regex strategy section for book, language, chapter start/end, and book start/end patterns
-- [X] T029 [US2] Implement `RegexChapterClassifier` in `src/bookcast_chapter_forge/classifiers/regex_chapter_classifier.py`
-- [X] T030 [US2] Add strategy selection and regex classifier integration to `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T028 [US2] Refactor `configs/config.yaml` so regex settings describe generic English-book structural patterns in `configs/config.yaml`
+- [X] T029 [US2] Remove domain-specific hardcoded title catalogs and implement generic heading detection in `src/bookcast_chapter_forge/classifiers/regex_chapter_classifier.py`
+- [X] T030 [US2] Add confidence-based validation for generic English-book chapter detection in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [X] T031 [US2] Add `books/` directory batch processing support to `src/bookcast_chapter_forge/cli/pdf_parser.py`
-- [X] T032 [US2] Add progress logging for page scanning and identified chapter boundaries in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T032 [US2] Add progress logging for generic heading inference and identified chapter boundaries in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [X] T033 [US2] Enforce “PDF and book only” validation before writing outputs in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 
 **Checkpoint**: User Stories 1 and 2 both work independently.
 
 ---
 
-## Phase 5: User Story 3 - Index-Based Classification Strategy (Priority: P3)
+## Phase 5: User Story 3 - Generic Index-Based Classification Strategy (Priority: P3)
 
-**Goal**: Add an index-driven strategy that detects index pages, derives chapter names and page offsets, and emits chapter-named output files.
+**Goal**: Add a generic contents/index-driven strategy that detects English TOC pages, derives chapter names and page offsets, and emits chapter-named output files.
 
-**Independent Test**: Run the CLI in index mode against `books/CSB_Pew_Bible_2nd_Printing.pdf` and verify that it produces 66 non-empty output PDFs named with order and sanitized chapter-name suffixes.
+**Independent Test**: Run the CLI in index mode against at least one English book with a usable table of contents and verify that output chunks align with TOC-derived chapter starts.
 
 ### Tests for User Story 3 ⚠️
 
-- [X] T034 [P] [US3] Add unit tests for index-page identification and entry parsing in `tests/unit/test_index_chapter_classifier.py`
-- [X] T035 [P] [US3] Add unit tests for page-offset calculation and chapter-name extraction in `tests/unit/test_index_chapter_classifier.py`
+- [X] T034 [P] [US3] Add unit tests for generic contents-page identification and entry parsing in `tests/unit/test_index_chapter_classifier.py`
+- [X] T035 [P] [US3] Add unit tests for generic page-offset calculation and chapter-name extraction in `tests/unit/test_index_chapter_classifier.py`
 - [X] T036 [P] [US3] Add unit tests for filename sanitization and chapter-name truncation in `tests/unit/test_output_writer.py`
 - [X] T037 [P] [US3] Add CLI integration test for index strategy execution in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 3
 
-- [X] T038 [US3] Extend `configs/config.yaml` with index-page and index-entry regex configuration
-- [X] T039 [US3] Implement `IndexChapterClassifier` in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
-- [X] T040 [US3] Add index strategy wiring and offset-based chunk generation to `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T038 [US3] Refactor `configs/config.yaml` so index settings describe generic English TOC layouts in `configs/config.yaml`
+- [X] T039 [US3] Remove domain-specific title assumptions and implement generic TOC parsing in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
+- [X] T040 [US3] Add generic TOC confidence checks and offset-based chunk generation in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [X] T041 [US3] Add chapter-name-aware output naming `{input file name}-{order number}-{chapter name (max 10 characters)}.pdf` in `src/bookcast_chapter_forge/services/output_writer.py`
 - [X] T042 [US3] Update the CLI strategy selector and user-facing progress output for index classification in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 - [X] T043 [US3] Abort processing with a clear error when no valid index page is identified in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
@@ -132,11 +132,11 @@
 
 **Purpose**: Final cleanup, validation, and documentation across all stories.
 
-- [X] T044 [P] Update CLI usage and configuration documentation in `README.md`
+- [X] T044 [P] Update CLI usage and configuration documentation for generic English-book chapter detection in `README.md`
 - [X] T045 [P] Add JSON summary output support in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 - [X] T046 Normalize end-to-end error reporting in `src/bookcast_chapter_forge/cli/pdf_parser.py` and `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [X] T047 [P] Add missing edge-case coverage in `tests/unit/test_config_loader.py` and `tests/unit/test_output_writer.py`
-- [X] T048 Run and verify the full test suite from `tests/unit/` and `tests/integration/`
+- [X] T047 [P] Add missing generic-book edge-case coverage in `tests/unit/test_config_loader.py`, `tests/unit/test_regex_chapter_classifier.py`, and `tests/unit/test_index_chapter_classifier.py`
+- [X] T048 Run and verify the full test suite plus at least one non-Bible English-book validation from `tests/unit/` and `tests/integration/`
 
 ---
 
@@ -155,7 +155,7 @@
 
 - **User Story 1 (P1)**: First deliverable and MVP
 - **User Story 2 (P2)**: Depends on the parser orchestration and CLI shell already established for US1
-- **User Story 3 (P3)**: Depends on the strategy-based classifier structure established by US2
+- **User Story 3 (P3)**: Depends on the generic strategy model established by US2
 
 ### Within Each User Story
 
@@ -219,4 +219,4 @@ With multiple developers:
 - `[P]` tasks are intended for different files with minimal coupling
 - Every task uses repository-relative paths and is derived only from `plan.md` and `spec.md`, which are the currently available design documents
 - `tasks.md` intentionally follows the constitution’s OO-first and test-first constraints
-- Avoid implementing US2 or US3 before US1 rollback and output safety are working
+- US2 and US3 were reopened and are now reimplemented around generic English-book heuristics rather than Bible-specific title catalogs

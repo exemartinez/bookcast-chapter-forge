@@ -42,3 +42,23 @@ def test_fails_when_no_index_page_is_found(book_document_factory) -> None:
 
     with pytest.raises(ValueError):
         IndexChapterClassifier().classify(book, _config())
+
+
+def test_parses_generic_contents_entries(book_document_factory) -> None:
+    book = book_document_factory(
+        "toc.pdf",
+        [
+            "Cover",
+            "Table of Contents\nIntroduction ........ 1\nChapter 1: Origins ........ 5\nConclusion ........ 10",
+            "Front matter",
+            "Introduction\nOpening chapter",
+            "Body",
+            "Chapter 1: Origins\nHistory starts here",
+            "More body",
+            "Conclusion\nWrap-up",
+        ],
+    )
+
+    result = IndexChapterClassifier().classify(book, _config())
+
+    assert [chunk.title for chunk in result.chunks] == ["Introduction", "Chapter 1: Origins", "Conclusion"]

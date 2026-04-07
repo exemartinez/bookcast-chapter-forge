@@ -1,4 +1,4 @@
-# Feature Specification: PDF Chapter Classifier 
+# Feature Specification: PDF Chapter Classifier
 
 **Feature Branch**: `001-pdf-chapter-classifier`  
 **Created**: 2026-04-03  
@@ -7,131 +7,123 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-<!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
-  you should still have a viable MVP (Minimum Viable Product) that delivers value.
-  
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
-  - Developed independently
-  - Tested independently
-  - Deployed independently
-  - Demonstrated to users independently
--->
+### User Story 1 - Fixed-Page PDF chunking for NotebookLM upload limits (Priority: P1)
 
-### User Story 1 - As a user of NotebookLM I need a python script that takes a pdf and generates N pdfs as output - one per chapter (Priority: P1)
+As a user, I want a Python CLI script that receives a PDF and produces N smaller PDF files when I choose a fixed-page strategy, so I can split oversized documents into NotebookLM-friendly chunks even before chapter detection is available.
 
-I take a random .pdf file and pass it as an argument to the script (`pdf_parser.py`) in a unix like command console. Then, I just run it. I will see cues of the script running and executing different task. When it successfully ends, I'll see In an `output/` folder 1 to N correct .pdf files. 
-One for every preset of pages for every chunk, defined in a `configs/` folder in a `yaml` file that states the criteria by which every pdf should be chunked, the `config.yaml` file:
+The script must:
 
-- Supports a preset of maximum number pages by which the pdf could be chunked. (every file found in the output should have that **maxium** amount of pages)
+- accept a direct PDF input path
+- read chunking parameters from `configs/config.yaml`
+- create one output PDF per chunk in `output/`
+- name outputs as `{input-file-name}-{order-number}.pdf`
 
-Output files should have the same name than the input file plus a postfix: `{input file name}-{order number}.pdf`. 
+**Why this priority**: It gives an immediate usable MVP even when chapter detection is not yet reliable.
 
-**Why this priority**: it just a way to lower the weight of a HUGE pdf file so NotebookLM accepts it into its scope.
-
-**Independent Test**: Can be fully tested by placing any pdf created with 'Ipsum Lorem' kind of data up to two pages (gibberish, we just need the pages). Then, passed it through the script(`pdf_parser.py`) and it should deliver two pdf files with each page placed in each one.
+**Independent Test**: Run the CLI against a synthetic 2-page PDF with `fixed_page.max_pages_per_chunk: 1` and confirm that 2 one-page PDFs are produced.
 
 **Acceptance Scenarios**:
 
-1. **Given** a pdf file with 2 pages, **When** running the pdf_chapter_classifier with a config page of 1, **Then** 2 pdf files should be found in the `output/` folder
+1. **Given** a 2-page PDF, **When** running the parser with `fixed` strategy and a maximum chunk size of 1, **Then** 2 output PDFs are created in `output/`
 
 ---
 
-### User Story 2 - As a parse of pdfs I want a Simple Automatic Chapter Ending identification libreary (Priority: P2)
+### User Story 2 - Generic regex-based chapter detection for English books (Priority: P2)
 
-Add the module `pdf_chapter_classifier.py` as an aid for `pdf_parser.py`. The script will ask the pdf_chapter_classifier where a given chapter ends. This chapter classifier should use the `configs/config.yaml` file parameter, in addition to any previous configuration:
+As a user, I want the parser to identify chapter boundaries for general English-language books without relying on domain-specific hardcoded title catalogs, so the software works across fiction, non-fiction, and other ordinary books.
 
-  - A regular expression to identify, generically, and for the english language only:
-    - if the pdf is a book or not.
-    - if the book has been written in **english**.
-    - if a given page is: The end of a chapter.
-    - if a given page is the beginning of a chapter.
-    - If a given page is the end of the book.
-    - If a given page is the beginning of the book.
-(These should be in a new section inside the `configs/config.yaml` file, dedicated to this sort of run.)
+The regex-based classifier must:
 
-Then, the `chapter-classifier` module (with their due internal bioma of classes and etc) should return a generator that brings where every chapter ends (at which page), so the `parser` cuts the source pdf in turn.
-The previous functionality provided by the `parser` script should be available and executable by parameters. Which means that the current one should be accesable by parameters passed to the parser.
-Also, the `parser` should take and process, sequentially, all the .pdf files that he may find inside the `books/` folder in the current repo.
-Is important to notice that a "Chapter" is not a "conventional book chapter" here; it's the maximum block of pages in which a given pdf can be devided aside from the current one.
-Example: if the current level is: "book", the next is "chapter". But if the current is "library", the next, is "book". And if current is "Chapter", may be is "section" (or pages if there is nothing lesser).
-The concept of "chapter" is to divide the current pdf document in its next "greater" subset.
+- operate on arbitrary English books, not only scripture-like PDFs
+- use configurable patterns from `configs/config.yaml`
+- detect likely chapter starts from generic structural signals such as:
+  - headings like `Chapter 1`, `Part II`, `Section 3`
+  - title pages for chapters without numeric prefixes
+  - repeated heading forms inferred from the document itself
+  - front-matter to body-matter transitions
+- validate that the input looks like an English book before producing output
+- avoid hardcoded domain-specific title catalogs in the default strategy
 
-**Why this priority**: Its the next step in the way to algorithmically define where the pdf should be cut. Is it not sustentable to pass a number of pages each time. We need to refactor the original scope by all sorts.
+**Why this priority**: This is the first real chapter-identification capability and must be generic enough for public portfolio-quality software.
 
-**Independent Test**: 
-1. use the file  `books/CSB_Pew_Bible_2nd_Printing.pdf` for testing: it should have 66 chapters/books.
+**Independent Test**: Run the regex strategy on at least one non-Bible English book with clear chapter headings and verify that output chunks align with real chapter starts.
 
 **Acceptance Scenarios**:
 
-1. **Given** `books/CSB_Pew_Bible_2nd_Printing.pdf`, **When** running the script, **Then** 66 pdfs files should have been produced with a number of pages greater than zero each.
+1. **Given** an English-language non-fiction or fiction PDF with chapter headings, **When** running the parser with `regex` strategy, **Then** the output PDFs start at the detected chapter boundaries
+2. **Given** a PDF whose structure does not look like an English book, **When** running the parser with `regex` strategy, **Then** the parser aborts with a clear validation error
+3. **Given** a chaptered PDF, **When** running the parser with `regex` strategy, **Then** the implementation does not depend on a hardcoded title list for a specific corpus such as the books of the Bible
 
 ---
 
-### User Story 3 - Refactor over the chapter-classifier (Priority: P3)
+### User Story 3 - Generic index/contents-based chapter detection for English books (Priority: P3)
 
-Encapsulates the logic by which the `chapter-classifier` regex's are being consumed from `configs/config.yml`,
-Assume that a way to identify if something is a book, we need to identify where its index is.
-Then:
+As a user, I want the parser to detect chapter boundaries from a generic table of contents or index page, so books with a usable contents page can be chunked more accurately than with regex-only detection.
 
-- Add a new set of regex's, in addition to the ones available up until today and in a new section inside `configs/config.yaml`
-  - A regex to identify if a given page is an "index page" in english language.
+The index-based classifier must:
 
-1. Then, the `chapter-classifier` will: read the first 10 pages and the last ten, searching for the index page. It should search for: the word "Index" as the title, a list of sentences followed by dots, lines or nothing and a number before the '\n' or 'new line' char (or whatever comes, or might come, in a pdf)
-2. Identify Each chapter name.
-3. Identify in which page each chapter is placed (the number at the end of the line)
-4. Search the first chapter string name, by name in the whole pdf: identify the `pdf-page` (the page that the pdf file says it is)
-5. Compares the `pdf-page` with the `index-page` (the page we identified this chapter should be, by reading the index)
-6. Stablishes the `offset` of pages.
-7. Returns a generator (the same that in `Use Case 1`, but for this strategy - this is not ´casual` wording, this feature should be implemented as a **strategy pattern** or similar)
+- look for `Contents`, `Table of Contents`, or equivalent generic English contents-page signals
+- parse chapter titles and printed page numbers from common contents layouts
+- infer the offset between printed page numbers and PDF page indices
+- map contents entries back to actual PDF pages
+- use the strategy pattern so `fixed`, `regex`, and `index` remain selectable modes
+- name outputs as `{input-file-name}-{order-number}-{chapter-name}.pdf`, with safe filename normalization and chapter-name truncation
+- remain generic and must not depend on a domain-specific catalog such as Bible book names
 
-The `parser` should be refactored so it can handle the changes and provide the parameters to go for any of the available "chunking" strategies.
-Note: Now, each output file should be named: `{input file name}-{order number}-{chapter name (max 10 characters)}.pdf`
-Replace any special characters for their acceptable equivalents for a filename.
+**Why this priority**: Contents-driven parsing is a stronger generic strategy and should improve chapter accuracy for books with well-formed tables of contents.
 
-**Why this priority**: we cannot built this before we have use case 1 & 2 in place.
-
-**Independent Test**: since this is a non-functional requirement we should go by implemented regular unit testing.
+**Independent Test**: Run the index strategy on at least one English book with a usable table of contents and verify that output chunks align with TOC-derived chapter starts.
 
 **Acceptance Scenarios**:
 
-1. **Given** `books/CSB_Pew_Bible_2nd_Printing.pdf`, **When** running the script with this strategy, **Then** 66 pdfs files should have been produced with a number of pages greater than zero each.
+1. **Given** an English PDF with a table of contents, **When** running the parser with `index` strategy, **Then** chunk boundaries are derived from parsed contents entries and PDF page offset inference
+2. **Given** a PDF without a detectable contents page, **When** running the parser with `index` strategy, **Then** the parser aborts with a clear error and produces no partial output
+3. **Given** a book with chapter names that contain spaces or punctuation, **When** output files are created, **Then** filenames are sanitized and truncated safely
 
 ---
 
 ### Edge Cases
 
-- What happens when there is no index identyfiable?
-  - Throw an error and abort the generation & chunking.
-- How does system handle errors?
-  - shows them throught the stdout. This is a CLI app.
-- What if processing takes more than 5'?
-  - Always show the chapters identified, and the progress. 
-  - If there is stallment or an issues, leave the user to decide if he aborts the operation.
-  - Keep everything in main memory until the parser has the pages by which it has to do the cut. When the chapters has been separated in pdfs, just right there, persist. This conserves transactionality and do not spam the user's HD.
+- What happens when there is no identifiable contents/index page?
+  - The parser aborts and writes no final output files.
+- What happens when chapter headings are inconsistent?
+  - The parser should prefer clear structural signals and fail explicitly when confidence is too low.
+- How does the system handle long-running processing?
+  - It always shows progress and allows the user to abort with `Ctrl-C`.
+- What happens on interruption or write failure?
+  - Final output must be rolled back so the run is effectively idempotent.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST show progress at all times.
-- **FR-002**: System MUST validate that the pdf is a pdf, and then a book. Just then proceed.  
-- **FR-003**: Users MUST be able to abort the processing at any given time with ctrl-c. The process should rollback. Nothing should appear in the user's disk (idempotency).
+- **FR-001**: System MUST show progress throughout processing.
+- **FR-002**: System MUST validate that the input is a PDF before processing.
+- **FR-003**: Users MUST be able to abort processing with `Ctrl-C`, and the parser MUST roll back final output files.
+- **FR-004**: System MUST provide a generic English-book regex strategy that does not depend on hardcoded title catalogs for a single domain or corpus.
+- **FR-005**: System MUST allow chapter-detection heuristics to be configured from `configs/config.yaml`.
+- **FR-006**: System MUST support batch processing of all `.pdf` files found in `books/`.
+- **FR-007**: System MUST support a generic contents/index strategy for English books with detectable TOC-style pages.
+- **FR-008**: System MUST fail with a clear validation error when it cannot confidently classify a document as a chaptered English book for the selected strategy.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Book**: it represents the whole pdf currently being analyzed.
-- **Chapter**: the next logical division in which the text can be divided at the highest grade.
+- **Book**: the source PDF currently being analyzed
+- **ChapterChunk**: a contiguous output slice with start page, end page, order, and optional chapter name
+- **ParserConfig**: YAML-driven settings controlling validation and chunking heuristics
+- **ClassificationResult**: the ordered result of one chunking strategy, including boundaries and metadata
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: The number of pages in all the generated pdf (output) can't be higher than the number of pages in the source pdf (input)
+- **SC-001**: The sum of output PDF page counts MUST equal the page count of the source PDF for successful runs.
+- **SC-002**: The default regex strategy MUST not require a hardcoded domain-specific chapter-title catalog.
+- **SC-003**: The parser MUST produce no final output files after interruption or fatal classification failure.
+- **SC-004**: At least one general English book with ordinary chapter headings and at least one English book with a usable table of contents MUST be processed successfully by the corresponding strategies.
 
 ## Assumptions
 
-- This app runs in a bash console (CLI)
-- Python 3.9 is installed and with a proper environment to process pdf's files.
+- The application runs as a CLI in a Unix-like shell.
+- Initial generic chapter detection scope is English-language books only.
+- Domain-specific profiles may be added later, but they are out of scope for the default generic classifier.

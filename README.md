@@ -5,8 +5,8 @@ Turn long-form books into NotebookLM-ready PDF chunks for AI-generated podcast w
 `bookcast-chapter-forge` is a Python CLI project that reads source PDFs, detects logical chunk boundaries, and exports one PDF per chunk. It currently supports:
 
 - fixed-page chunking
-- regex-based chapter/book-start detection
-- index/contents-driven chunking with page-offset inference
+- generic regex-based chapter/book-start detection for English books
+- generic index/contents-driven chunking with page-offset inference for English books
 
 ## Current Scope
 
@@ -55,7 +55,7 @@ PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser \
   --json
 ```
 
-Run regex-based chunking:
+Run generic regex-based chunking:
 
 ```bash
 PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser \
@@ -90,8 +90,8 @@ PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser \
 The chunking behavior is configured in `configs/config.yaml`.
 
 - `fixed_page.max_pages_per_chunk`: hard page limit per chunk
-- `regex.*`: chapter/book-start heuristics
-- `index.*`: contents/index-page detection and entry parsing rules
+- `regex.*`: generic English-book chapter heading heuristics
+- `index.*`: generic English contents/index-page detection and entry parsing rules
 
 ## Testing
 
@@ -114,13 +114,15 @@ Current automated coverage includes:
 The current implementation was validated against:
 
 - synthetic fixture PDFs in the automated test suite
+- `books/Building LLMs for Production_ Enhancing LLM Abilities -- Peters, Louie & Bouchard, Louis-François -- 2024.pdf` with:
+  - `regex` strategy: 13 output PDFs from generic chapter-heading detection
 - `books/CSB_Pew_Bible_2nd_Printing.pdf` with:
   - `regex` strategy: 66 output PDFs
-  - `index` strategy: 66 output PDFs
+  - `index` strategy: 68 output PDFs from generic contents parsing, including trailing supplementary contents entries
 
 ## Next Steps
 
 - add EPUB ingestion
 - improve package/install ergonomics so `PYTHONPATH=src` is no longer needed
-- expand chapter heuristics for non-Bible books
+- improve generic chapter heuristics for books with title-only chapter pages
 - add NotebookLM export formatting beyond PDF chunking

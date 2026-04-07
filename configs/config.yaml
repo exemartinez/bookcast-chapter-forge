@@ -1,19 +1,26 @@
 fixed_page:
-  max_pages_per_chunk: 1
+  max_pages_per_chunk: 15
 
 regex:
   book_patterns:
     - '(?i)chapter'
+    - '(?i)table\\s+of\\s+contents'
+    - '(?i)contents'
   english_patterns:
     - '(?i)the'
     - '(?i)and'
+    - '(?i)with'
+    - '(?i)for'
   chapter_start_patterns:
-    - '(?i)^chapter\\s+[0-9ivxlcdm]+'
-    - '(?i)^(genesis|exodus|leviticus|numbers|deuteronomy|joshua|judges|ruth|1\\s+samuel|2\\s+samuel|1\\s+kings|2\\s+kings|1\\s+chronicles|2\\s+chronicles|ezra|nehemiah|esther|job|psalms|proverbs|ecclesiastes|song\\s+of\\s+solomon|isaiah|jeremiah|lamentations|ezekiel|daniel|hosea|joel|amos|obadiah|jonah|micah|nahum|habakkuk|zephaniah|haggai|zechariah|malachi|matthew|mark|luke|john|acts|romans|1\\s+corinthians|2\\s+corinthians|galatians|ephesians|philippians|colossians|1\\s+thessalonians|2\\s+thessalonians|1\\s+timothy|2\\s+timothy|titus|philemon|hebrews|james|1\\s+peter|2\\s+peter|1\\s+john|2\\s+john|3\\s+john|jude|revelation)\\b'
+    - '(?i)^chapter\\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b'
+    - '(?i)^part\\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b'
+    - '(?i)^section\\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b'
+    - '(?i)^(prologue|epilogue|appendix|conclusion|introduction|acknowledgment|acknowledgement|preface)\\b'
   chapter_end_patterns:
-    - '(?i)amen\\s*$'
+    - '(?i)^recap$'
+    - '(?i)^the\\s+end$'
   book_start_patterns:
-    - '(?i)^(title|contents|preface|foreword|chapter\\s+[0-9ivxlcdm]+)'
+    - '(?i)^(title|contents|table\\s+of\\s+contents|preface|foreword|introduction|chapter\\s+)'
   book_end_patterns:
     - '(?i)^(appendix|index|glossary|the\\s+end)'
 

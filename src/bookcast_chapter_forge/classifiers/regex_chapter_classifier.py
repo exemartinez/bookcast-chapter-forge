@@ -5,76 +5,6 @@ import re
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
 from bookcast_chapter_forge.domain.entities import BookDocument, ChapterChunk, ClassificationResult, ParserConfig
 
-KNOWN_BOOK_TITLES = {
-    "genesis",
-    "exodus",
-    "leviticus",
-    "numbers",
-    "deuteronomy",
-    "joshua",
-    "judges",
-    "ruth",
-    "1 samuel",
-    "2 samuel",
-    "1 kings",
-    "2 kings",
-    "1 chronicles",
-    "2 chronicles",
-    "ezra",
-    "nehemiah",
-    "esther",
-    "job",
-    "psalms",
-    "proverbs",
-    "ecclesiastes",
-    "song of songs",
-    "song of solomon",
-    "isaiah",
-    "jeremiah",
-    "lamentations",
-    "ezekiel",
-    "daniel",
-    "hosea",
-    "joel",
-    "amos",
-    "obadiah",
-    "jonah",
-    "micah",
-    "nahum",
-    "habakkuk",
-    "zephaniah",
-    "haggai",
-    "zechariah",
-    "malachi",
-    "matthew",
-    "mark",
-    "luke",
-    "john",
-    "acts",
-    "romans",
-    "1 corinthians",
-    "2 corinthians",
-    "galatians",
-    "ephesians",
-    "philippians",
-    "colossians",
-    "1 thessalonians",
-    "2 thessalonians",
-    "1 timothy",
-    "2 timothy",
-    "titus",
-    "philemon",
-    "hebrews",
-    "james",
-    "1 peter",
-    "2 peter",
-    "1 john",
-    "2 john",
-    "3 john",
-    "jude",
-    "revelation",
-}
-
 
 def _first_non_empty_line(text: str) -> str:
     for line in text.splitlines():
@@ -87,6 +17,20 @@ def _first_non_empty_line(text: str) -> str:
 def _normalize_title(value: str) -> str:
     normalized = re.sub(r"[^a-z0-9]+", " ", value.lower())
     return re.sub(r"\s+", " ", normalized).strip()
+
+
+def _is_sparse_heading_page(text: str, first_line: str) -> bool:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    if not first_line or not lines:
+        return False
+    words = first_line.split()
+    if len(words) > 10 or len(first_line) > 90:
+        return False
+    if first_line.endswith((".", "!", "?", ";")):
+        return False
+    title_case_words = sum(1 for word in words if word[:1].isupper() or word.isupper())
+    title_case_ratio = title_case_words / max(len(words), 1)
+    return len(lines) <= 6 and title_case_ratio >= 0.6
 
 
 class RegexChapterClassifier(ChapterClassifier):
@@ -102,10 +46,12 @@ class RegexChapterClassifier(ChapterClassifier):
 
         starts: list[tuple[int, str]] = []
         last_title = ""
+        repeated_heading_titles = self._infer_repeated_heading_titles(book)
+
         for page_number, text in enumerate(book.page_texts, start=1):
             first_line = _first_non_empty_line(text)
             page_prefix = "\n".join(text.splitlines()[:4]).strip()
-            if self._matches_start(first_line, page_prefix, config):
+            if self._matches_start(first_line, page_prefix, text, repeated_heading_titles, config):
                 title = first_line or f"Chapter {page_number}"
                 normalized = _normalize_title(title)
                 if normalized and normalized != last_title:
@@ -114,8 +60,8 @@ class RegexChapterClassifier(ChapterClassifier):
 
         if not starts:
             raise ValueError("No chapter boundaries were identified by regex strategy")
-        if len(starts) == 1 and starts[0][0] != 1 and book.page_count < 2:
-            raise ValueError("The PDF does not appear to be a book")
+        if len(starts) < 2 and book.page_count > max(10, config.max_pages_per_chunk):
+            raise ValueError("The PDF does not appear to contain reliable generic chapter boundaries")
 
         chunks: list[ChapterChunk] = []
         for order, (page_number, title) in enumerate(starts, start=1):
@@ -136,10 +82,30 @@ class RegexChapterClassifier(ChapterClassifier):
         sample = " ".join(book.page_texts[: min(20, book.page_count)])
         return any(re.search(pattern, sample) for pattern in config.regex_english_patterns)
 
-    def _matches_start(self, first_line: str, page_prefix: str, config: ParserConfig) -> bool:
-        haystacks = [first_line, page_prefix]
+    def _matches_start(
+        self,
+        first_line: str,
+        page_prefix: str,
+        page_text: str,
+        repeated_heading_titles: set[str],
+        config: ParserConfig,
+    ) -> bool:
         patterns = list(config.regex_chapter_start_patterns) + list(config.regex_book_start_patterns)
-        if any(re.search(pattern, haystack) for haystack in haystacks for pattern in patterns if haystack):
+        if any(re.search(pattern, first_line) for pattern in patterns if first_line):
             return True
+        if _is_sparse_heading_page(page_text, first_line) and any(re.search(pattern, page_prefix) for pattern in patterns if page_prefix):
+            return True
+
         normalized = _normalize_title(first_line)
-        return any(normalized == title or normalized.startswith(f"{title} page") for title in KNOWN_BOOK_TITLES)
+        return normalized in repeated_heading_titles and _is_sparse_heading_page(page_text, first_line)
+
+    def _infer_repeated_heading_titles(self, book: BookDocument) -> set[str]:
+        counts: dict[str, int] = {}
+        for text in book.page_texts:
+            first_line = _first_non_empty_line(text)
+            normalized = _normalize_title(first_line)
+            if len(normalized.split()) < 2:
+                continue
+            if _is_sparse_heading_page(text, first_line):
+                counts[normalized] = counts.get(normalized, 0) + 1
+        return {title for title, count in counts.items() if count >= 1}

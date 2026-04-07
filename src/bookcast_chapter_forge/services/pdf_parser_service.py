@@ -7,7 +7,7 @@ from bookcast_chapter_forge.classifiers.base import ChapterClassifier
 from bookcast_chapter_forge.classifiers.fixed_page_classifier import FixedPageClassifier
 from bookcast_chapter_forge.classifiers.index_chapter_classifier import IndexChapterClassifier
 from bookcast_chapter_forge.classifiers.regex_chapter_classifier import RegexChapterClassifier
-from bookcast_chapter_forge.domain.entities import BookDocument
+from bookcast_chapter_forge.domain.entities import BookDocument, ClassificationResult
 from bookcast_chapter_forge.infrastructure.logging import EventLogger
 from bookcast_chapter_forge.infrastructure.pdf_reader import PdfReaderAdapter
 from bookcast_chapter_forge.services.config_loader import ConfigLoader
@@ -57,6 +57,7 @@ class PdfParserService:
         book = self.pdf_reader.read_book(path)
         self._validate_book(book, strategy)
         result = classifier.classify(book, config)
+        self._validate_classification_result(book, strategy, result)
         self.logger.progress("classification_complete", path=str(path), chunks=len(result.chunks), strategy=strategy)
         try:
             output_files = tuple(self.output_writer.write_book_chunks(book, result.chunks))
@@ -73,3 +74,20 @@ class PdfParserService:
             return
         if not any(text.strip() for text in book.page_texts):
             raise ValueError("The PDF does not contain extractable text")
+
+    def _validate_classification_result(self, book: BookDocument, strategy: str, result: ClassificationResult) -> None:
+        if strategy == "fixed":
+            return
+        if not result.chunks:
+            raise ValueError("The classifier did not return any chapter chunks")
+        if any(chunk.page_count <= 0 for chunk in result.chunks):
+            raise ValueError("The classifier returned an invalid zero-length chunk")
+        if len(result.chunks) < 2 and book.page_count > max(20, len(result.chunks)):
+            raise ValueError(f"The {strategy} strategy could not confidently identify generic chapter boundaries")
+        self.logger.progress(
+            "classification_confidence",
+            path=str(book.path),
+            strategy=strategy,
+            chunks=len(result.chunks),
+            pages=book.page_count,
+        )
