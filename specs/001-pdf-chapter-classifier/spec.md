@@ -63,8 +63,9 @@ As a user, I want the parser to detect chapter boundaries from a generic table o
 The index-based classifier must:
 
 - look for `Contents`, `Table of Contents`, or equivalent generic English contents-page signals
-- parse chapter titles and printed page numbers from common contents layouts
-- infer the offset between printed page numbers and PDF page indices
+- parse chapter titles and printed page numbers from common contents layouts, including Roman-numeral front matter
+- infer the offset between printed page numbers and PDF page indices without one-page drift on ordinary books
+- use PDF hyperlink or annotation destinations when a contents page is clickable and printed page numbers are not extractable from text
 - map contents entries back to actual PDF pages
 - use the strategy pattern so `fixed`, `regex`, and `index` remain selectable modes
 - name outputs as `{input-file-name}-{order-number}-{chapter-name}.pdf`, with safe filename normalization and chapter-name truncation
@@ -79,6 +80,8 @@ The index-based classifier must:
 1. **Given** an English PDF with a table of contents, **When** running the parser with `index` strategy, **Then** chunk boundaries are derived from parsed contents entries and PDF page offset inference
 2. **Given** a PDF without a detectable contents page, **When** running the parser with `index` strategy, **Then** the parser aborts with a clear error and produces no partial output
 3. **Given** a book with chapter names that contain spaces or punctuation, **When** output files are created, **Then** filenames are sanitized and truncated safely
+4. **Given** a contents page with Roman-numeral front matter entries, **When** running the parser with `index` strategy, **Then** those entries are mapped to the correct PDF pages
+5. **Given** a clickable contents page whose visible text omits printed page numbers, **When** running the parser with `index` strategy, **Then** the parser derives chapter starts from hyperlink destinations instead of failing scope
 
 ---
 
@@ -104,6 +107,9 @@ The index-based classifier must:
 - **FR-005**: System MUST allow chapter-detection heuristics to be configured from `configs/config.yaml`.
 - **FR-006**: System MUST support batch processing of all `.pdf` files found in `books/`.
 - **FR-007**: System MUST support a generic contents/index strategy for English books with detectable TOC-style pages.
+- **FR-009**: System MUST support Roman-numeral contents entries when mapping front matter or other non-Arabic page labels.
+- **FR-010**: System MUST use hyperlink or annotation destinations from clickable contents pages when that is the only reliable source of chapter targets.
+- **FR-011**: System MUST infer contents-to-PDF page offsets robustly enough to avoid systematic one-page drift on successful runs.
 - **FR-008**: System MUST fail with a clear validation error when it cannot confidently classify a document as a chaptered English book for the selected strategy.
 
 ### Key Entities *(include if feature involves data)*
@@ -121,6 +127,7 @@ The index-based classifier must:
 - **SC-002**: The default regex strategy MUST not require a hardcoded domain-specific chapter-title catalog.
 - **SC-003**: The parser MUST produce no final output files after interruption or fatal classification failure.
 - **SC-004**: At least one general English book with ordinary chapter headings and at least one English book with a usable table of contents MUST be processed successfully by the corresponding strategies.
+- **SC-005**: The index strategy MUST correctly place at least one Roman-numeral contents entry and at least one clickable-TOC entry during validation.
 
 ## Assumptions
 

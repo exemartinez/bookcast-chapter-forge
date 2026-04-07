@@ -62,3 +62,21 @@ def test_parses_generic_contents_entries(book_document_factory) -> None:
     result = IndexChapterClassifier().classify(book, _config())
 
     assert [chunk.title for chunk in result.chunks] == ["Introduction", "Chapter 1: Origins", "Conclusion"]
+
+
+def test_parses_roman_numbered_contents_entries(book_document_factory) -> None:
+    book = book_document_factory(
+        "roman.pdf",
+        [
+            "Cover",
+            "Contents\nPreface ........ iv\nIntroduction ........ v\nChapter 1 ........ 1",
+            "Blank",
+            "Preface\nOpening",
+            "Introduction\nOverview",
+            "Chapter 1\nStart",
+        ],
+    )
+
+    result = IndexChapterClassifier().classify(book, _config())
+
+    assert [chunk.title for chunk in result.chunks] == ["Preface", "Introduction", "Chapter 1"]

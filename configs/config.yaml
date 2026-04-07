@@ -1,5 +1,5 @@
 fixed_page:
-  max_pages_per_chunk: 15
+  max_pages_per_chunk: 1
 
 regex:
   book_patterns:
@@ -20,7 +20,7 @@ regex:
     - '(?i)^recap$'
     - '(?i)^the\\s+end$'
   book_start_patterns:
-    - '(?i)^(title|contents|table\\s+of\\s+contents|preface|foreword|introduction|chapter\\s+)'
+    - '(?i)^(title|contents|table\\s+of\\s+contents|preface|foreword|introduction|acknowledg(e)?ment|conclusion|chapter\\s+)'
   book_end_patterns:
     - '(?i)^(appendix|index|glossary|the\\s+end)'
 
@@ -30,4 +30,4 @@ index:
     - '(?i)^table\\s+of\\s+contents$'
     - '(?i)^index$'
   entry_patterns:
-    - '^(?P<title>.+?)[\\s.·_-]+(?P<page>\\d+)$'
+    - '^(?P<title>.+?)[\\s.·_-]+(?P<page>(?:\\d+|[ivxlcdm]+))$'

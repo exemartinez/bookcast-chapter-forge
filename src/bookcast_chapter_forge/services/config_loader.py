@@ -33,4 +33,4 @@ class ConfigLoader:
         )
 
     def _normalize(self, values: list[str]) -> tuple[str, ...]:
-        return tuple(str(value) for value in values)
+        return tuple(str(value).replace("\\\\", "\\") for value in values)

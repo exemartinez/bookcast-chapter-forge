@@ -102,6 +102,9 @@ tests/
   - title-only heading pages
   - configurable structural patterns in `config.yaml`
 - Parse contents pages generically from common English TOC layouts.
+- Support Roman-numeral contents entries for front matter and similar sections.
+- Fall back to clickable TOC hyperlink destinations when text extraction does not expose printable page numbers.
+- Infer offsets from multiple anchors so a single title-page mismatch does not shift the whole book by one page.
 - If domain-specific profiles are needed later, isolate them as explicit optional profiles rather than default behavior.
 
 ### CLI Surface
@@ -117,7 +120,7 @@ tests/
 2. P2 generic regex classifier:
    Replace corpus-specific fallback behavior with generic English-book heading detection.
 3. P3 generic index classifier:
-   Implement generic contents-page parsing and page-offset matching for English books.
+   Implement generic contents-page parsing, Roman-numeral support, hyperlink-aware TOC mapping, and robust page-offset matching for English books.
 
 ## Work Plan
 
@@ -131,6 +134,7 @@ tests/
 
 - Redesign regex heuristics around generic heading signals.
 - Redesign index parsing around generic contents-page patterns.
+- Include hyperlink-driven TOC handling and Roman-numeral page-label handling in the index design.
 - Update `config.yaml` schema to favor generic structural patterns instead of corpus-specific title lists.
 
 ### Phase 2 Implementation
@@ -138,12 +142,14 @@ tests/
 - Keep fixed-page strategy intact.
 - Refactor regex classifier to remove domain-specific hardcoded title catalogs.
 - Refactor index classifier to parse generic contents pages and map entries back to actual PDF pages.
+- Refactor index classifier to resolve TOC entries from text, page labels, and hyperlink destinations, then reconcile them with robust offset inference.
 - Update validation, logging, and output naming as needed.
 
 ### Phase 3 Verification
 
 - Add tests for generic books with chapter headings.
 - Add tests for generic TOC-based books.
+- Add tests for Roman-numeral TOC entries, clickable TOC entries, and off-by-one offset regressions.
 - Keep failure-mode tests for invalid PDFs, non-book-like inputs, and rollback behavior.
 
 ## Test-First Execution Order

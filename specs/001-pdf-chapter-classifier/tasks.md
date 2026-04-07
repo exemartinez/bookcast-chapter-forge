@@ -111,15 +111,15 @@
 ### Tests for User Story 3 ⚠️
 
 - [X] T034 [P] [US3] Add unit tests for generic contents-page identification and entry parsing in `tests/unit/test_index_chapter_classifier.py`
-- [X] T035 [P] [US3] Add unit tests for generic page-offset calculation and chapter-name extraction in `tests/unit/test_index_chapter_classifier.py`
+- [X] T035 [P] [US3] Add unit tests for generic page-offset calculation, Roman-numeral TOC handling, and chapter-name extraction in `tests/unit/test_index_chapter_classifier.py`
 - [X] T036 [P] [US3] Add unit tests for filename sanitization and chapter-name truncation in `tests/unit/test_output_writer.py`
 - [X] T037 [P] [US3] Add CLI integration test for index strategy execution in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 3
 
 - [X] T038 [US3] Refactor `configs/config.yaml` so index settings describe generic English TOC layouts in `configs/config.yaml`
-- [X] T039 [US3] Remove domain-specific title assumptions and implement generic TOC parsing in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
-- [X] T040 [US3] Add generic TOC confidence checks and offset-based chunk generation in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [X] T039 [US3] Remove domain-specific title assumptions and implement generic TOC parsing from text lines, Roman numerals, and clickable TOC destinations in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
+- [X] T040 [US3] Add generic TOC confidence checks and robust offset-based chunk generation that avoids systematic one-page drift in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [X] T041 [US3] Add chapter-name-aware output naming `{input file name}-{order number}-{chapter name (max 10 characters)}.pdf` in `src/bookcast_chapter_forge/services/output_writer.py`
 - [X] T042 [US3] Update the CLI strategy selector and user-facing progress output for index classification in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 - [X] T043 [US3] Abort processing with a clear error when no valid index page is identified in `src/bookcast_chapter_forge/classifiers/index_chapter_classifier.py`
@@ -135,8 +135,8 @@
 - [X] T044 [P] Update CLI usage and configuration documentation for generic English-book chapter detection in `README.md`
 - [X] T045 [P] Add JSON summary output support in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 - [X] T046 Normalize end-to-end error reporting in `src/bookcast_chapter_forge/cli/pdf_parser.py` and `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [X] T047 [P] Add missing generic-book edge-case coverage in `tests/unit/test_config_loader.py`, `tests/unit/test_regex_chapter_classifier.py`, and `tests/unit/test_index_chapter_classifier.py`
-- [X] T048 Run and verify the full test suite plus at least one non-Bible English-book validation from `tests/unit/` and `tests/integration/`
+- [X] T047 [P] Add missing generic-book edge-case coverage, including clickable TOCs and Roman-numeral contents, in `tests/unit/test_config_loader.py`, `tests/unit/test_regex_chapter_classifier.py`, and `tests/unit/test_index_chapter_classifier.py`
+- [X] T048 Run and verify the full test suite plus real index-strategy validation for Roman-numeral contents, clickable TOCs, and offset accuracy from `tests/unit/` and `tests/integration/`
 
 ---
 
