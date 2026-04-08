@@ -1,0 +1,33 @@
+fixed_page:
+  max_pages_per_chunk: 15
+
+regex:
+  book_patterns:
+    - '(?i)chapter'
+    - '(?i)table\\s+of\\s+contents'
+    - '(?i)contents'
+  english_patterns:
+    - '(?i)the'
+    - '(?i)and'
+    - '(?i)with'
+    - '(?i)for'
+  chapter_start_patterns:
+    - '(?i)^chapter\\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b'
+    - '(?i)^part\\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b'
+    - '(?i)^section\\s+([0-9]+|[ivxlcdm]+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b'
+    - '(?i)^(prologue|epilogue|appendix|conclusion|introduction|acknowledgment|acknowledgement|preface)\\b'
+  chapter_end_patterns:
+    - '(?i)^recap$'
+    - '(?i)^the\\s+end$'
+  book_start_patterns:
+    - '(?i)^(title|contents|table\\s+of\\s+contents|preface|foreword|introduction|acknowledg(e)?ment|conclusion|chapter\\s+)'
+  book_end_patterns:
+    - '(?i)^(appendix|index|glossary|the\\s+end)'
+
+index:
+  index_title_patterns:
+    - '(?i)^contents$'
+    - '(?i)^table\\s+of\\s+contents$'
+    - '(?i)^index$'
+  entry_patterns:
+    - '^(?P<title>.+?)[\\s.·_-]+(?P<page>(?:\\d+|[ivxlcdm]+))$'

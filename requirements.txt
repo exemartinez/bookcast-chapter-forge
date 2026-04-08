@@ -1,0 +1,5 @@
+pypdf==6.1.1
+PyYAML==6.0.3
+pytest==8.4.2
+pytest-cov==7.0.0
+uv==0.11.3
