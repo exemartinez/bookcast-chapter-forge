@@ -16,6 +16,10 @@ class ConfigLoader:
         fixed_page = payload.get("fixed_page", {})
         regex = payload.get("regex", {})
         index = payload.get("index", {})
+        layout = payload.get("layout", {})
+        semantic = payload.get("semantic", {})
+        model = payload.get("model", {})
+        heuristic = payload.get("heuristic", {})
         max_pages = int(fixed_page.get("max_pages_per_chunk", 1))
         if max_pages <= 0:
             raise ValueError("fixed_page.max_pages_per_chunk must be greater than zero")
@@ -30,7 +34,14 @@ class ConfigLoader:
             regex_book_end_patterns=self._normalize(regex.get("book_end_patterns", [])),
             index_title_patterns=self._normalize(index.get("index_title_patterns", [])),
             index_entry_patterns=self._normalize(index.get("entry_patterns", [])),
+            layout_heading_patterns=self._normalize(layout.get("heading_patterns", [])),
+            semantic_title_patterns=self._normalize(semantic.get("title_patterns", [])),
+            model_enabled=bool(model.get("enabled", False)),
+            heuristic_signal_weights=self._normalize_weights(heuristic.get("signal_weights", {})),
         )
 
     def _normalize(self, values: list[str]) -> tuple[str, ...]:
         return tuple(str(value).replace("\\\\", "\\") for value in values)
+
+    def _normalize_weights(self, weights: dict[str, object]) -> dict[str, float]:
+        return {str(key): float(value) for key, value in (weights or {}).items()}

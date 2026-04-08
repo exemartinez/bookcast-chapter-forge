@@ -3,3 +3,7 @@ PyYAML==6.0.3
 pytest==8.4.2
 pytest-cov==7.0.0
 uv==0.11.3
+pymupdf4llm==1.27.2.2
+unstructured==0.22.18
+langchain==1.2.15
+langgraph==1.1.6

@@ -80,7 +80,7 @@ Exit Criteria
   --require-tasks \
   --include-tasks
 ```
-Ask the LLM agent to generate your `tasks.md` file based on `plan.md` and `spec.md`, then fulfill its template requirements. 
+6. Ask the LLM agent to generate your `tasks.md` file based on `plan.md` and `spec.md`, then fulfill its template requirements. 
 
 Output
 - Atomic, ordered execution steps
@@ -98,8 +98,11 @@ Exit Criteria
 ---
 
 #### Phase 4 — Implementation
-6. Implement strictly following tasks.md
-
+7. Implement strictly following tasks.md
+- Check first, prerrequisites:
+```
+.specify/scripts/bash/check-prerequisites.sh --json --require-tasks --include-tasks
+```
 - Run implementation (ask the LLM to do it - Cursor, Pycharm, Claude Code, etc.)
 
 Rules

@@ -56,3 +56,59 @@ def test_cli_accepts_index_strategy_selection(monkeypatch, capsys) -> None:
 
     assert exit_code == 0
     assert json.loads(capsys.readouterr().out)["strategy"] == "index"
+
+
+def test_cli_accepts_layout_strategy_selection(monkeypatch, capsys) -> None:
+    class FakeService:
+        def process(self, strategy, config_path, input_path=None, books_dir=None):
+            assert strategy == "layout"
+            return []
+
+    monkeypatch.setattr("bookcast_chapter_forge.cli.pdf_parser.build_service", lambda output_dir="output": FakeService())
+
+    exit_code = main(["--strategy", "layout", "--json"])
+
+    assert exit_code == 0
+    assert json.loads(capsys.readouterr().out)["strategy"] == "layout"
+
+
+def test_cli_accepts_semantic_strategy_selection(monkeypatch, capsys) -> None:
+    class FakeService:
+        def process(self, strategy, config_path, input_path=None, books_dir=None):
+            assert strategy == "semantic"
+            return []
+
+    monkeypatch.setattr("bookcast_chapter_forge.cli.pdf_parser.build_service", lambda output_dir="output": FakeService())
+
+    exit_code = main(["--strategy", "semantic", "--json"])
+
+    assert exit_code == 0
+    assert json.loads(capsys.readouterr().out)["strategy"] == "semantic"
+
+
+def test_cli_accepts_model_strategy_selection(monkeypatch, capsys) -> None:
+    class FakeService:
+        def process(self, strategy, config_path, input_path=None, books_dir=None):
+            assert strategy == "model"
+            return []
+
+    monkeypatch.setattr("bookcast_chapter_forge.cli.pdf_parser.build_service", lambda output_dir="output": FakeService())
+
+    exit_code = main(["--strategy", "model", "--json"])
+
+    assert exit_code == 0
+    assert json.loads(capsys.readouterr().out)["strategy"] == "model"
+
+
+def test_cli_accepts_heuristic_strategy_selection(monkeypatch, capsys) -> None:
+    class FakeService:
+        def process(self, strategy, config_path, input_path=None, books_dir=None):
+            assert strategy == "heuristic"
+            return []
+
+    monkeypatch.setattr("bookcast_chapter_forge.cli.pdf_parser.build_service", lambda output_dir="output": FakeService())
+
+    exit_code = main(["--strategy", "heuristic", "--json"])
+
+    assert exit_code == 0
+    assert json.loads(capsys.readouterr().out)["strategy"] == "heuristic"

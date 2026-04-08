@@ -89,6 +89,22 @@ PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser \
   --output-dir output
 ```
 
+Run optional advanced strategies:
+
+```bash
+# Layout-aware strategy (requires optional dependency: pymupdf4llm)
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy layout --output-dir output
+
+# Semantic strategy (requires optional dependency: unstructured)
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy semantic --output-dir output
+
+# Model-assisted strategy (requires optional dependency: langchain + local model runtime)
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy model --output-dir output
+
+# Hybrid heuristic integrator
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy heuristic --output-dir output
+```
+
 Process all PDFs in `books/`:
 
 ```bash

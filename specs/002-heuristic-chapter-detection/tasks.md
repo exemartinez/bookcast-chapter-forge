@@ -21,10 +21,10 @@
 
 **Purpose**: Prepare optional dependency wiring and shared config surfaces needed by all new strategies.
 
-- [ ] T001 Add optional dependency groups/documentation for `pymupdf4llm`, `unstructured`, `langchain`/`langgraph` in `requirements.txt` and `README.md`
-- [ ] T002 [P] Extend strategy configuration sections for `layout`, `semantic`, `model`, and `heuristic` in `configs/config.yaml`
-- [ ] T003 [P] Add strategy-name constants and export updates in `src/bookcast_chapter_forge/classifiers/__init__.py`
-- [ ] T004 [P] Add shared fixture placeholders for messy-layout and sectioned PDFs in `tests/fixtures/pdfs/README.md`
+- [x] T001 Add optional dependency groups/documentation for `pymupdf4llm`, `unstructured`, `langchain`/`langgraph` in `requirements.txt` and `README.md`
+- [x] T002 [P] Extend strategy configuration sections for `layout`, `semantic`, `model`, and `heuristic` in `configs/config.yaml`
+- [x] T003 [P] Add strategy-name constants and export updates in `src/bookcast_chapter_forge/classifiers/__init__.py`
+- [x] T004 [P] Add shared fixture placeholders for messy-layout and sectioned PDFs in `tests/fixtures/pdfs/README.md`
 
 ---
 
@@ -34,11 +34,11 @@
 
 **⚠️ CRITICAL**: No user story implementation begins until this phase is complete.
 
-- [ ] T005 Add evidence and boundary decision dataclasses (`SignalEvidence`, `BoundaryCandidate`, `BoundaryDecision`) in `src/bookcast_chapter_forge/domain/entities.py`
-- [ ] T006 [P] Add classifier utility helpers for chunk invariant validation and deterministic sorting in `src/bookcast_chapter_forge/classifiers/utils.py`
-- [ ] T007 [P] Extend config loader parsing/validation for new strategy keys in `src/bookcast_chapter_forge/services/config_loader.py`
-- [ ] T008 Register new strategy keys (`layout`, `semantic`, `model`, `heuristic`) in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T009 [P] Extend CLI strategy choices and help text for new strategies in `src/bookcast_chapter_forge/cli/pdf_parser.py`
+- [x] T005 Add evidence and boundary decision dataclasses (`SignalEvidence`, `BoundaryCandidate`, `BoundaryDecision`) in `src/bookcast_chapter_forge/domain/entities.py`
+- [x] T006 [P] Add classifier utility helpers for chunk invariant validation and deterministic sorting in `src/bookcast_chapter_forge/classifiers/utils.py`
+- [x] T007 [P] Extend config loader parsing/validation for new strategy keys in `src/bookcast_chapter_forge/services/config_loader.py`
+- [x] T008 Register new strategy keys (`layout`, `semantic`, `model`, `heuristic`) in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [x] T009 [P] Extend CLI strategy choices and help text for new strategies in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 - [ ] T010 [P] Add structured logging event names for evidence extraction and boundary decisions in `src/bookcast_chapter_forge/infrastructure/logging.py`
 
 **Checkpoint**: Foundation complete; user stories can now be implemented in planned order.
@@ -55,16 +55,16 @@
 
 > **NOTE: Write these tests FIRST; ensure they fail before implementation.**
 
-- [ ] T011 [P] [US1] Add unit tests for layout evidence extraction and heading hierarchy scoring in `tests/unit/test_layout_aware_classifier.py`
-- [ ] T012 [P] [US1] Add unit test for missing `pymupdf4llm` dependency error isolation in `tests/unit/test_layout_aware_classifier.py`
+- [x] T011 [P] [US1] Add unit tests for layout evidence extraction and heading hierarchy scoring in `tests/unit/test_layout_aware_classifier.py`
+- [x] T012 [P] [US1] Add unit test for missing `pymupdf4llm` dependency error isolation in `tests/unit/test_layout_aware_classifier.py`
 - [ ] T013 [P] [US1] Add integration test for `layout` strategy via service pipeline in `tests/integration/test_pdf_parser_service.py`
-- [ ] T014 [P] [US1] Add CLI integration test for `--strategy layout` in `tests/integration/test_pdf_parser_cli.py`
+- [x] T014 [P] [US1] Add CLI integration test for `--strategy layout` in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Implement `LayoutAwareClassifier` in `src/bookcast_chapter_forge/classifiers/layout_aware_classifier.py`
-- [ ] T016 [US1] Add lazy optional import and strategy-local error handling for `pymupdf4llm` in `src/bookcast_chapter_forge/classifiers/layout_aware_classifier.py`
-- [ ] T017 [US1] Integrate layout strategy registration in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [x] T015 [US1] Implement `LayoutAwareClassifier` in `src/bookcast_chapter_forge/classifiers/layout_aware_classifier.py`
+- [x] T016 [US1] Add lazy optional import and strategy-local error handling for `pymupdf4llm` in `src/bookcast_chapter_forge/classifiers/layout_aware_classifier.py`
+- [x] T017 [US1] Integrate layout strategy registration in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [ ] T018 [US1] Emit structured logs for layout evidence and final decisions in `src/bookcast_chapter_forge/classifiers/layout_aware_classifier.py`
 
 **Checkpoint**: US1 is independently functional and testable.
@@ -80,20 +80,20 @@
 ### Tests for User Story 2 
 
 - [ ] T019 [P] [US2] Add unit tests for section/title boundary inference in `tests/unit/test_semantic_section_classifier.py`
-- [ ] T020 [P] [US2] Add unit tests for semantic dependency-missing failure isolation in `tests/unit/test_semantic_section_classifier.py`
+- [x] T020 [P] [US2] Add unit tests for semantic dependency-missing failure isolation in `tests/unit/test_semantic_section_classifier.py`
 - [ ] T021 [P] [US2] Add unit tests proving model-assisted mode consumes structured candidates (not raw full text) in `tests/unit/test_model_assisted_classifier.py`
-- [ ] T022 [P] [US2] Add unit tests for model-runtime unavailable errors in `tests/unit/test_model_assisted_classifier.py`
+- [x] T022 [P] [US2] Add unit tests for model-runtime unavailable errors in `tests/unit/test_model_assisted_classifier.py`
 - [ ] T023 [P] [US2] Add integration test for `semantic` strategy pipeline behavior in `tests/integration/test_pdf_parser_service.py`
-- [ ] T024 [P] [US2] Add CLI integration tests for `--strategy semantic` and `--strategy model` in `tests/integration/test_pdf_parser_cli.py`
+- [x] T024 [P] [US2] Add CLI integration tests for `--strategy semantic` and `--strategy model` in `tests/integration/test_pdf_parser_cli.py`
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Implement `SemanticSectionClassifier` in `src/bookcast_chapter_forge/classifiers/semantic_section_classifier.py`
-- [ ] T026 [US2] Add lazy optional import and isolated error handling for `unstructured` in `src/bookcast_chapter_forge/classifiers/semantic_section_classifier.py`
-- [ ] T027 [US2] Implement `ModelAssistedClassifier` with structured-candidate ranking pipeline in `src/bookcast_chapter_forge/classifiers/model_assisted_classifier.py`
-- [ ] T028 [US2] Add optional LangChain/LangGraph + local model runtime adapter in `src/bookcast_chapter_forge/classifiers/model_assisted_classifier.py`
-- [ ] T029 [US2] Register `semantic` and `model` strategies in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T030 [US2] Add strategy-specific config parsing and validation for semantic/model settings in `src/bookcast_chapter_forge/services/config_loader.py`
+- [x] T025 [US2] Implement `SemanticSectionClassifier` in `src/bookcast_chapter_forge/classifiers/semantic_section_classifier.py`
+- [x] T026 [US2] Add lazy optional import and isolated error handling for `unstructured` in `src/bookcast_chapter_forge/classifiers/semantic_section_classifier.py`
+- [x] T027 [US2] Implement `ModelAssistedClassifier` with structured-candidate ranking pipeline in `src/bookcast_chapter_forge/classifiers/model_assisted_classifier.py`
+- [x] T028 [US2] Add optional LangChain/LangGraph + local model runtime adapter in `src/bookcast_chapter_forge/classifiers/model_assisted_classifier.py`
+- [x] T029 [US2] Register `semantic` and `model` strategies in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [x] T030 [US2] Add strategy-specific config parsing and validation for semantic/model settings in `src/bookcast_chapter_forge/services/config_loader.py`
 
 **Checkpoint**: US1 and US2 are independently functional; optional dependency failures are isolated.
 
@@ -107,19 +107,19 @@
 
 ### Tests for User Story 3 
 
-- [ ] T031 [P] [US3] Add unit tests for multi-signal candidate scoring and deterministic tie-breakers in `tests/unit/test_heuristic_integrator_classifier.py`
-- [ ] T032 [P] [US3] Add unit tests for non-overlapping ordered chunk generation bounds in `tests/unit/test_heuristic_integrator_classifier.py`
+- [x] T031 [P] [US3] Add unit tests for multi-signal candidate scoring and deterministic tie-breakers in `tests/unit/test_heuristic_integrator_classifier.py`
+- [x] T032 [P] [US3] Add unit tests for non-overlapping ordered chunk generation bounds in `tests/unit/test_heuristic_integrator_classifier.py`
 - [ ] T033 [P] [US3] Add integration test proving heuristic integration of layout + semantic evidence in `tests/integration/test_pdf_parser_service.py`
-- [ ] T034 [P] [US3] Add CLI integration test for `--strategy heuristic` in `tests/integration/test_pdf_parser_cli.py`
+- [x] T034 [P] [US3] Add CLI integration test for `--strategy heuristic` in `tests/integration/test_pdf_parser_cli.py`
 - [ ] T035 [P] [US3] Add regression tests confirming `fixed|regex|index` unchanged behavior in `tests/unit/test_fixed_page_classifier.py`, `tests/unit/test_regex_chapter_classifier.py`, and `tests/unit/test_index_chapter_classifier.py`
 
 ### Implementation for User Story 3
 
-- [ ] T036 [US3] Implement `HeuristicIntegratorClassifier` in `src/bookcast_chapter_forge/classifiers/heuristic_integrator_classifier.py`
-- [ ] T037 [US3] Implement deterministic signal precedence and tie-break policy in `src/bookcast_chapter_forge/classifiers/heuristic_integrator_classifier.py`
+- [x] T036 [US3] Implement `HeuristicIntegratorClassifier` in `src/bookcast_chapter_forge/classifiers/heuristic_integrator_classifier.py`
+- [x] T037 [US3] Implement deterministic signal precedence and tie-break policy in `src/bookcast_chapter_forge/classifiers/heuristic_integrator_classifier.py`
 - [ ] T038 [US3] Add integration hooks to consume evidence from layout/semantic/model outputs in `src/bookcast_chapter_forge/classifiers/heuristic_integrator_classifier.py`
-- [ ] T039 [US3] Register `heuristic` strategy in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
-- [ ] T040 [US3] Add strategy metadata/warnings propagation for confidence diagnostics in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [x] T039 [US3] Register `heuristic` strategy in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
+- [x] T040 [US3] Add strategy metadata/warnings propagation for confidence diagnostics in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 
 **Checkpoint**: All user stories are functional; hybrid strategy is implemented last and integrates US1/US2 outputs.
 
@@ -129,7 +129,7 @@
 
 **Purpose**: Final docs, verification, and readiness checks across all strategies.
 
-- [ ] T041 [P] Document new strategies, optional dependencies, and selection guidance in `README.md`
+- [x] T041 [P] Document new strategies, optional dependencies, and selection guidance in `README.md`
 - [ ] T042 [P] Add quickstart scenarios for baseline vs optional strategy runs in `specs/002-heuristic-chapter-detection/quickstart.md`
 - [ ] T043 Add/update strategy contracts and failure semantics in `specs/002-heuristic-chapter-detection/contracts/chapter-classification-contract.md`
 - [ ] T044 [P] Add research decisions and alternatives in `specs/002-heuristic-chapter-detection/research.md`

@@ -48,3 +48,35 @@ def test_loads_regex_and_index_patterns(tmp_path: Path) -> None:
 
     assert config.regex_chapter_start_patterns == ("(?i)^chapter",)
     assert config.index_title_patterns == ("(?i)^contents$",)
+
+
+def test_loads_optional_strategy_sections(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "fixed_page:",
+                "  max_pages_per_chunk: 2",
+                "layout:",
+                "  heading_patterns:",
+                "    - '(?i)^chapter'",
+                "semantic:",
+                "  title_patterns:",
+                "    - '(?i)^part'",
+                "model:",
+                "  enabled: true",
+                "heuristic:",
+                "  signal_weights:",
+                "    layout: 3.0",
+                "    semantic: 2.0",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    config = ConfigLoader().load(config_path)
+
+    assert config.layout_heading_patterns == ("(?i)^chapter",)
+    assert config.semantic_title_patterns == ("(?i)^part",)
+    assert config.model_enabled is True
+    assert config.heuristic_signal_weights["layout"] == 3.0

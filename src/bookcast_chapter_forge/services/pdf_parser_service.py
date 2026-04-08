@@ -5,8 +5,12 @@ from pathlib import Path
 
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
 from bookcast_chapter_forge.classifiers.fixed_page_classifier import FixedPageClassifier
+from bookcast_chapter_forge.classifiers.heuristic_integrator_classifier import HeuristicIntegratorClassifier
 from bookcast_chapter_forge.classifiers.index_chapter_classifier import IndexChapterClassifier
+from bookcast_chapter_forge.classifiers.layout_aware_classifier import LayoutAwareClassifier
+from bookcast_chapter_forge.classifiers.model_assisted_classifier import ModelAssistedClassifier
 from bookcast_chapter_forge.classifiers.regex_chapter_classifier import RegexChapterClassifier
+from bookcast_chapter_forge.classifiers.semantic_section_classifier import SemanticSectionClassifier
 from bookcast_chapter_forge.domain.entities import BookDocument, ClassificationResult
 from bookcast_chapter_forge.infrastructure.logging import EventLogger
 from bookcast_chapter_forge.infrastructure.pdf_reader import PdfReaderAdapter
@@ -39,6 +43,10 @@ class PdfParserService:
             "fixed": FixedPageClassifier(),
             "regex": RegexChapterClassifier(),
             "index": IndexChapterClassifier(),
+            "layout": LayoutAwareClassifier(),
+            "semantic": SemanticSectionClassifier(),
+            "model": ModelAssistedClassifier(),
+            "heuristic": HeuristicIntegratorClassifier(),
         }
 
     def process(self, strategy: str, config_path: str | Path, input_path: str | Path | None = None, books_dir: str | Path | None = None) -> list[ProcessedBook]:

@@ -19,7 +19,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--input", help="Path to a single PDF file")
     parser.add_argument("--books-dir", default="books", help="Directory containing PDF books")
     parser.add_argument("--config", default="configs/config.yaml", help="Path to the YAML config file")
-    parser.add_argument("--strategy", choices=["fixed", "regex", "index"], default="fixed")
+    parser.add_argument(
+        "--strategy",
+        choices=["fixed", "regex", "index", "layout", "semantic", "model", "heuristic"],
+        default="fixed",
+    )
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable output")
     return parser.parse_args(argv)

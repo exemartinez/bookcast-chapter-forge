@@ -42,6 +42,31 @@ class ParserConfig:
     regex_book_end_patterns: tuple[str, ...] = ()
     index_title_patterns: tuple[str, ...] = ()
     index_entry_patterns: tuple[str, ...] = ()
+    layout_heading_patterns: tuple[str, ...] = ()
+    semantic_title_patterns: tuple[str, ...] = ()
+    model_enabled: bool = False
+    heuristic_signal_weights: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class SignalEvidence:
+    source: str
+    page: int
+    label: str
+    score: float
+
+
+@dataclass(frozen=True)
+class BoundaryCandidate:
+    page: int
+    score: float
+    signals: tuple[SignalEvidence, ...] = ()
+
+
+@dataclass(frozen=True)
+class BoundaryDecision:
+    ordered_pages: tuple[int, ...]
+    rationale: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
