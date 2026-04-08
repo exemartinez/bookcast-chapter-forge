@@ -61,6 +61,7 @@ Experimental model-assisted modes must remain optional and must not degrade dete
 Runtime behavior must be configuration-driven; hardcoded strategy behavior should be avoided except for safe defaults.
 Optional integrations must have graceful import/runtime failure paths with actionable error messages.
 The baseline installation path must continue to support existing workflows without requiring optional heavy dependencies.
+Imports must be declared at module top-level. Inline function/method imports are disallowed except in narrowly documented circular-import workarounds approved in the feature plan.
 
 ### XII. Security and Privacy for Model-Assisted Flows
 No external network model dependency may be introduced by default.
@@ -72,4 +73,4 @@ Each feature must maintain traceability: `spec.md` -> `plan.md` -> `tasks.md` ->
 Closure notes should record what landed, known limitations, and what remains intentionally out of scope.
 README and strategy documentation must state "best-effort" limitations clearly when chapter extraction is heuristic.
 
-**Version**: 1.4.0 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-08
+**Version**: 1.4.1 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-08
