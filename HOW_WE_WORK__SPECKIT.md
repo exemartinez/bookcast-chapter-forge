@@ -29,7 +29,10 @@ This is not optional guidance. It is the operating model.
 # End-to-End Workflow
 
 #### Phase 1 — Feature Definition
-1. Create feature scaffold
+1. Create feature scaffold, for example: 
+```
+.specify/scripts/bash/create-new-feature.sh --json --short-name "heuristic-chapter-detection" "Heuristic PDF chapter detection that improves on feature 001 by evaluating multiple structural signals such as TOC text, page labels, hyperlinks, PDF outlines, layout-aware heading extraction, and optional local-model assistance to choose chapter boundaries more reliably across messy English-language books"
+```
 2. Write spec.md
 
 Output
@@ -43,6 +46,9 @@ Exit Criteria
 
 #### Phase 2 — Planning
 3. Generate plan scaffold
+```
+.specify/scripts/bash/setup-plan.sh --json
+```
 4. Fill plan.md
 
 Output
@@ -59,7 +65,22 @@ Exit Criteria
 ---
 
 #### Phase 3 — Task Decomposition
-5. Generate and refine tasks.md
+5. Generate and refine tasks.md, first run:
+```
+.specify/scripts/bash/check-prerequisites.sh --json
+```
+- Pre-implementation: update `agents` (we used `codex`, but any `agent` will do.)
+```
+.specify/scripts/bash/update-agent-context.sh codex
+```
+- Check prerrequisites:
+```
+.specify/scripts/bash/check-prerequisites.sh \
+  --json \
+  --require-tasks \
+  --include-tasks
+```
+Ask the LLM agent to generate your `tasks.md` file based on `plan.md` and `spec.md`, then fulfill its template requirements. 
 
 Output
 - Atomic, ordered execution steps
@@ -79,6 +100,8 @@ Exit Criteria
 #### Phase 4 — Implementation
 6. Implement strictly following tasks.md
 
+- Run implementation (ask the LLM to do it - Cursor, Pycharm, Claude Code, etc.)
+
 Rules
 - Do not improvise outside tasks without updating tasks.md
 - Mark tasks as completed immediately after execution
@@ -92,10 +115,13 @@ Exit Criteria
 
 #### Phase 5 — Validation
 7. Run tests
-8. Validate against real PDFs
+```
+./bookcast-ve/bin/pytest
+```
+8. Manualy validate against real PDFs (`slow` testing)
 
 Requirements
-- Unit tests must pass
+- Unit tests & Slow tests must pass
 - Functional validation must match real-world behavior
 
 Exit Criteria

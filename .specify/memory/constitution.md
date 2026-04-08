@@ -38,4 +38,38 @@ Python 3.9+ plus libraries.
 ## Governance
 Constitution supersedes all other practices; Amendments require documentation, approval, migration plan.
 
-**Version**: 1.3.0 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-07
+## Additional Standards (Additive)
+
+### VIII. Strategy Isolation and Additive Evolution
+New chapter-detection capabilities must be introduced as additive classifier strategies that implement existing interfaces.
+Strategy-specific optional dependencies must be isolated so missing packages do not break unrelated strategies.
+No feature may force global architectural rewrites when the same goal can be achieved through a new classifier module.
+
+### IX. Contract and Data Integrity
+Every classifier must return contract-valid `ClassificationResult` values:
+- chunk ranges must be ordered and non-overlapping
+- chunk ranges must stay within document page bounds
+- zero-length chunks are forbidden
+When confidence is low, classifiers should emit clear warnings/metadata rather than silently returning misleading boundaries.
+
+### X. Reproducibility and Determinism
+Boundary decisions must be deterministic by default for the same input and configuration.
+When heuristics include tie-breakers, tie-break rules must be explicit and documented in code-level comments or module docs.
+Experimental model-assisted modes must remain optional and must not degrade deterministic non-model strategies.
+
+### XI. Configuration and Dependency Discipline
+Runtime behavior must be configuration-driven; hardcoded strategy behavior should be avoided except for safe defaults.
+Optional integrations must have graceful import/runtime failure paths with actionable error messages.
+The baseline installation path must continue to support existing workflows without requiring optional heavy dependencies.
+
+### XII. Security and Privacy for Model-Assisted Flows
+No external network model dependency may be introduced by default.
+If model-assisted logic is used, it should process structured candidate evidence instead of raw full-document dumps when possible.
+Logs must avoid leaking full sensitive document text unless explicit debug mode is enabled by the user.
+
+### XIII. Documentation and Spec Traceability
+Each feature must maintain traceability: `spec.md` -> `plan.md` -> `tasks.md` -> implementation/tests.
+Closure notes should record what landed, known limitations, and what remains intentionally out of scope.
+README and strategy documentation must state "best-effort" limitations clearly when chapter extraction is heuristic.
+
+**Version**: 1.4.0 | **Ratified**: 2026-04-03 | **Last Amended**: 2026-04-08
