@@ -1,36 +1,93 @@
 from __future__ import annotations
 
+from collections import defaultdict
+
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
-from bookcast_chapter_forge.classifiers.utils import build_chunks, chapter_start_pages
-from bookcast_chapter_forge.domain.entities import BookDocument, ClassificationResult, ParserConfig
+from bookcast_chapter_forge.classifiers.index_chapter_classifier import IndexChapterClassifier
+from bookcast_chapter_forge.classifiers.layout_aware_classifier import LayoutAwareClassifier
+from bookcast_chapter_forge.classifiers.model_assisted_classifier import ModelAssistedClassifier
+from bookcast_chapter_forge.classifiers.regex_chapter_classifier import RegexChapterClassifier
+from bookcast_chapter_forge.classifiers.semantic_section_classifier import SemanticSectionClassifier
+from bookcast_chapter_forge.classifiers.utils import build_chunks, first_non_empty_line
+from bookcast_chapter_forge.domain.entities import BoundaryCandidate, BookDocument, ClassificationResult, ParserConfig, SignalEvidence
 
 
 class HeuristicIntegratorClassifier(ChapterClassifier):
+    """Combine corroborated evidence from multiple strategies into one deterministic chapter plan."""
+
     @property
     def strategy_name(self) -> str:
         return "heuristic"
 
     def classify(self, book: BookDocument, config: ParserConfig) -> ClassificationResult:
-        # Deterministic signal precedence: layout > semantic > regex fallback.
-        weighted_patterns: list[tuple[float, tuple[str, ...], str]] = [
-            (config.heuristic_signal_weights.get("layout", 3.0), config.layout_heading_patterns, "layout"),
-            (config.heuristic_signal_weights.get("semantic", 2.0), config.semantic_title_patterns, "semantic"),
-            (config.heuristic_signal_weights.get("regex", 1.0), config.regex_chapter_start_patterns, "regex"),
-        ]
+        """Aggregate evidence from available strategies and choose stable boundary pages."""
+        candidates, warnings = self._collect_candidates(book, config)
+        if not candidates:
+            raise ValueError("heuristic strategy could not identify corroborated boundary candidates")
 
-        scored_starts: dict[int, tuple[float, str]] = {}
-        for weight, patterns, source in weighted_patterns:
-            if not patterns:
-                continue
-            for page, title in chapter_start_pages(book, patterns):
-                score, _ = scored_starts.get(page, (0.0, title))
-                scored_starts[page] = (score + weight, title or source.title())
-
-        ordered = sorted(
-            ((page, score_title[1], score_title[0]) for page, score_title in scored_starts.items()),
-            key=lambda item: (-item[2], item[0]),
-        )
-        starts = sorted([(page, title) for page, title, _ in ordered], key=lambda item: item[0])
+        selected = self._select_candidates(candidates)
+        starts = [(candidate.page, self._title_for_candidate(book, candidate)) for candidate in selected]
         chunks = build_chunks(starts, book.page_count)
-        return ClassificationResult(chunks=chunks, metadata={"strategy": self.strategy_name, "signals": len(starts)})
+        return ClassificationResult(
+            chunks=chunks,
+            warnings=tuple(warnings),
+            metadata={"strategy": self.strategy_name, "signals": len(selected), "sources": len(candidates)},
+        )
 
+    def _collect_candidates(self, book: BookDocument, config: ParserConfig) -> tuple[list[BoundaryCandidate], list[str]]:
+        """Run subordinate strategies, collect their start pages, and aggregate them into weighted candidates."""
+        weighted_results: dict[int, list[SignalEvidence]] = defaultdict(list)
+        warnings: list[str] = []
+
+        for source, weight, classifier in self._strategy_sources(config):
+            try:
+                result = classifier.classify(book, config)
+            except ValueError as exc:
+                warnings.append(f"{source}: {exc}")
+                continue
+            except Exception as exc:
+                warnings.append(f"{source}: runtime failure ({exc})")
+                continue
+
+            for chunk in result.chunks:
+                label = chunk.title or first_non_empty_line(book.page_texts[chunk.start_page - 1]) or source.title()
+                weighted_results[chunk.start_page].append(
+                    SignalEvidence(source=source, page=chunk.start_page, label=label, score=weight)
+                )
+
+        candidates = [
+            BoundaryCandidate(page=page, score=sum(signal.score for signal in signals), signals=tuple(signals))
+            for page, signals in weighted_results.items()
+        ]
+        return candidates, warnings
+
+    def _strategy_sources(self, config: ParserConfig) -> tuple[tuple[str, float, ChapterClassifier], ...]:
+        """Define deterministic evidence source order and per-source weight."""
+        sources: list[tuple[str, float, ChapterClassifier]] = [
+            ("index", config.heuristic_signal_weights.get("index", 2.5), IndexChapterClassifier()),
+            ("layout", config.heuristic_signal_weights.get("layout", 3.0), LayoutAwareClassifier()),
+            ("semantic", config.heuristic_signal_weights.get("semantic", 2.0), SemanticSectionClassifier()),
+            ("regex", config.heuristic_signal_weights.get("regex", 1.0), RegexChapterClassifier()),
+        ]
+        if config.model_enabled:
+            sources.append(("model", config.heuristic_signal_weights.get("model", 2.0), ModelAssistedClassifier()))
+        return tuple(sources)
+
+    def _select_candidates(self, candidates: list[BoundaryCandidate]) -> list[BoundaryCandidate]:
+        """Keep candidates with meaningful support and apply deterministic tie-break ordering."""
+        accepted: list[BoundaryCandidate] = []
+        for candidate in sorted(candidates, key=lambda item: (item.page, -item.score)):
+            source_count = len({signal.source for signal in candidate.signals})
+            if candidate.score <= 0 or source_count == 0:
+                continue
+            accepted.append(candidate)
+
+        if not accepted:
+            accepted = sorted(candidates, key=lambda item: (-item.score, item.page))[:1]
+
+        return sorted(accepted, key=lambda item: item.page)
+
+    def _title_for_candidate(self, book: BookDocument, candidate: BoundaryCandidate) -> str:
+        """Prefer the strongest evidence label for a selected candidate page."""
+        strongest = sorted(candidate.signals, key=lambda signal: (-signal.score, signal.source))[0]
+        return strongest.label or first_non_empty_line(book.page_texts[candidate.page - 1]) or f"Page {candidate.page}"
