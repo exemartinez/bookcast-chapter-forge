@@ -5,18 +5,18 @@
 
 ## Summary
 
-Add new chapter-detection strategies as additive modules implementing the existing `ChapterClassifier` contract, without refactoring current `fixed`, `regex`, or `index` behavior. Delivery order is: (1) layout-aware classifier, (2) semantic + optional model-assisted classifier, (3) hybrid heuristic integrator that combines multiple corroborating signals into final boundary decisions. The existing CLI/service pipeline remains intact; only strategy registration and classifier-local glue are touched.
+Add new chapter-detection strategies as additive modules implementing the existing `ChapterClassifier` contract, without refactoring current `fixed`, `regex`, or `index` behavior. Delivery order is: (1) layout-aware classifier, (2) semantic section classifier, (3) hybrid heuristic integrator that combines multiple corroborating deterministic signals into final boundary decisions, and (4) a local-LLM enhancer that starts from `layout` candidates and uses `Ollama + phi3.5 mini` to validate cuts and correct titles. The existing CLI/service pipeline remains intact; only strategy registration and classifier-local glue are touched.
 
 ## Technical Context
 
 **Language/Version**: Python 3.11  
-**Primary Dependencies**: Existing: `pypdf`, `PyYAML`, `pytest`; Optional for this feature: `pymupdf4llm`, `unstructured`, `langchain` and/or `langgraph`, local model runtime (e.g., Ollama)  
+**Primary Dependencies**: Existing: `pypdf`, `PyYAML`, `pytest`; Optional for this feature: `pymupdf4llm`, `unstructured`, `langchain-ollama` or a thin Ollama HTTP adapter, local `Ollama` runtime with `phi3.5` mini  
 **Storage**: Local filesystem only (`books/`, `configs/`, `output/`)  
 **Testing**: `pytest`, `pytest-cov` (unit + integration; slow markers for larger real-book scenarios)  
 **Target Platform**: macOS/Linux CLI environment  
 **Project Type**: Single-package CLI application  
 **Performance Goals**: Maintain practical local processing performance for book-sized PDFs while preserving deterministic non-model modes  
-**Constraints**: Additive-only strategy implementation, strict `ChapterClassifier` contract compatibility, optional dependencies must fail in isolation, offline-first defaults, structured logging, deterministic tie-breaks for heuristic decisions  
+**Constraints**: Additive-only strategy implementation, strict `ChapterClassifier` contract compatibility, optional dependencies must fail in isolation, offline-first defaults, structured logging, deterministic tie-breaks for heuristic decisions, LLM review restricted to structured local evidence derived from `layout` outputs  
 **Scale/Scope**: Feature-local classifier additions for English-language PDFs; no architecture rewrite; no global dependency hard requirement
 
 ## Constitution Check
@@ -30,9 +30,9 @@ Add new chapter-detection strategies as additive modules implementing the existi
 - Simplicity and additive evolution: Pass. No redesign of orchestration; registration + isolated strategy modules only.
 - Strategy isolation (VIII): Pass by design requirement.
 - Contract/data integrity (IX): Pass with explicit chunk validity rules.
-- Determinism (X): Pass for non-model modes; model-assisted mode remains optional/experimental.
+- Determinism (X): Pass for non-LLM modes; LLM-enhanced review remains optional/experimental.
 - Dependency discipline (XI): Pass with optional import guards and isolated failures.
-- Security/privacy (XII): Pass with structured evidence to model and no mandatory external network calls.
+- Security/privacy (XII): Pass with structured evidence to local model and no mandatory external network calls.
 
 No constitution violations are required for this feature.
 
@@ -70,8 +70,8 @@ src/
     │   ├── index_chapter_classifier.py
     │   ├── layout_aware_classifier.py          # new
     │   ├── semantic_section_classifier.py      # new
-    │   ├── model_assisted_classifier.py        # new (optional mode)
-    │   └── heuristic_integrator_classifier.py  # new final integrator
+    │   ├── heuristic_integrator_classifier.py  # new final deterministic integrator
+    │   └── llm_enhanced_classifier.py          # new layout + Ollama reviewer
     └── infrastructure/
         ├── logging.py
         └── pdf_reader.py
@@ -95,6 +95,8 @@ tests/
   - `SignalEvidence`: source signal + confidence inputs
   - `BoundaryCandidate`: candidate start location + supporting evidence
   - `BoundaryDecision`: resolved ordered boundaries used to build `ChapterChunk`s
+  - `LLMReviewPacket`: structured local evidence bundle for one proposed `layout` cut
+  - `LLMReviewDecision`: keep/reject/title-correction response from the local model
 - Keep output contract unchanged: all strategies return `ClassificationResult`.
 
 ### Strategy Delivery Order
@@ -102,16 +104,19 @@ tests/
 1. **Layout-aware classifier (P1)**  
    Uses `pymupdf4llm` when available to infer starts from heading hierarchy, typography, spacing, and block segmentation.
 
-2. **Semantic + optional model-assisted classifier (P2)**  
-   Uses `unstructured` title/section segmentation; optional model-assisted candidate ranking via LangChain/LangGraph + local runtime.
+2. **Semantic section classifier (P2)**  
+   Uses `unstructured` title/section segmentation as an additional deterministic signal source.
 
 3. **Hybrid heuristic integrator (P3, last)**  
-   Aggregates evidence from layout-aware + semantic/model-assisted signals plus TOC/page-label/hyperlink/outline cues into final deterministic boundary decisions.
+   Aggregates evidence from layout-aware + semantic signals plus TOC/page-label/hyperlink/outline cues into final deterministic boundary decisions.
+
+4. **LLM enhancer (P4, after deterministic strategies)**  
+   Starts from `layout`-proposed chunks, builds structured local review packets, and uses `Ollama + phi3.5 mini` to confirm/reject each cut and correct chunk titles/filenames.
 
 ### Registration and Selection
 
 - Add new selectable strategy names in CLI/service classifier map.
-- Strategy names should remain explicit and independently selectable (e.g., `layout`, `semantic`, `model`, `heuristic`).
+- Strategy names should remain explicit and independently selectable (e.g., `layout`, `semantic`, `heuristic`, `llm`).
 - Existing `fixed|regex|index` behavior remains unchanged.
 
 ### Optional Dependency Policy
@@ -119,12 +124,14 @@ tests/
 - Optional imports are lazy and classifier-local.
 - Missing optional packages produce clear strategy-specific errors.
 - Baseline install (without optional packages) continues to run existing strategies.
+- The LLM-enhanced strategy additionally requires a reachable local `Ollama` runtime and the configured `phi3.5` mini model to be available.
 
 ### Deterministic Decision Policy
 
 - Heuristic and non-model paths must be deterministic for same input/config.
 - Tie-break rules are explicit and documented (signal precedence and confidence ordering).
-- Model-assisted mode ranks structured candidates only; raw full-document prompts are out of scope.
+- LLM-enhanced review consumes structured local evidence packets only; raw full-document prompts are out of scope.
+- The LLM review layer is advisory over `layout` output and must return structured keep/reject/title decisions.
 
 ## Delivery Phases
 
@@ -133,7 +140,7 @@ tests/
 - Research robust layout-signal extraction patterns using `pymupdf4llm`.
 - Research `unstructured` element taxonomy for chapter/section detection.
 - Define candidate-scoring and deterministic tie-break policy for integrator.
-- Define model-assisted evidence schema and local-runtime constraints.
+- Define LLM review packet schema, prompt contract, and local `Ollama + phi3.5 mini` runtime constraints.
 - Produce `research.md` with decisions, rationale, and alternatives.
 
 ### Phase 1 Design
@@ -144,23 +151,26 @@ tests/
   - baseline run without optional deps
   - strategy-specific runs with optional deps
   - expected behavior on dependency-missing paths
+  - local `Ollama` setup and `phi3.5` mini pull instructions for the LLM enhancer
 - Re-check constitution gates with completed design artifacts.
 
 ### Phase 2 Planning Handoff
 
-- Generate `tasks.md` from this plan with implementation ordered by P1 -> P2 -> P3.
-- Ensure task graph enforces hybrid integrator implementation last.
+- Generate `tasks.md` from this plan with implementation ordered by P1 -> P2 -> P3 -> P4.
+- Ensure task graph keeps the LLM enhancer after `layout` and after the deterministic strategies are stable.
 
 ## Test-First Execution Order
 
 1. Add failing unit tests for layout-aware classifier contract validity and dependency-missing behavior.
 2. Implement layout-aware classifier until tests pass.
-3. Add failing unit tests for semantic classifier and model-assisted mode contract/dependency behavior.
-4. Implement semantic + model-assisted components until tests pass.
-5. Add failing unit/integration tests for hybrid integrator combining signals from prior strategies.
+3. Add failing unit tests for semantic classifier contract/dependency behavior.
+4. Implement semantic classifier until tests pass.
+5. Add failing unit/integration tests for hybrid integrator combining deterministic signals from prior strategies.
 6. Implement hybrid integrator and deterministic tie-break rules until tests pass.
-7. Add CLI/service integration tests for registration and independent strategy selection.
-8. Re-run existing `fixed|regex|index` tests to prove no regressions.
+7. Add failing unit/integration tests for the LLM enhancer reviewing `layout` cuts and correcting titles.
+8. Implement local `Ollama + phi3.5 mini` review flow until tests pass.
+9. Add CLI/service integration tests for registration and independent strategy selection.
+10. Re-run existing `fixed|regex|index` tests to prove no regressions.
 
 ## Risks and Mitigations
 
@@ -168,8 +178,8 @@ tests/
   - Mitigation: lazy imports, clear error messages, isolated strategy failures.
 - Signal disagreement causing unstable chapter boundaries.  
   - Mitigation: explicit scoring + deterministic tie-break hierarchy + warning metadata.
-- Model-assisted mode introducing nondeterminism or latency.  
-  - Mitigation: keep optional/experimental, bounded evidence input, deterministic fallback path.
+- LLM-enhanced review introducing nondeterminism, latency, or runtime friction.  
+  - Mitigation: keep optional/experimental, bounded structured evidence input, local `Ollama` only, deterministic fallback/error path when runtime is unavailable.
 - Overreaching scope into pipeline refactor.  
   - Mitigation: enforce additive-only tasks; reject non-essential orchestration changes.
 
