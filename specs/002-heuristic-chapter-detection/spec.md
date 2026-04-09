@@ -74,8 +74,8 @@ As a developer, I can select a local-LLM-enhanced strategy that starts from the 
 
 1. **Given** a PDF where the `layout` strategy proposes candidate chapter cuts, **When** the LLM enhancer runs, **Then** it re-evaluates each proposed cut using local structured evidence around the candidate pages and either confirms or rejects the cut.
 2. **Given** a proposed chunk title or filename that does not match the visible heading of the selected section, **When** the LLM enhancer runs, **Then** it returns a corrected canonical title for that chunk.
-3. **Given** Ollama or the selected local model is unavailable, **When** the LLM enhancer is selected, **Then** the system fails with a clear strategy-specific dependency/runtime error instead of affecting other strategies.
-4. **Given** the local model is available, **When** the LLM enhancer runs, **Then** it uses `Ollama` with `phi3.5` mini as the default lightweight runtime and consumes structured evidence rather than the full PDF text.
+3. **Given** `llama-server` or the selected local model is unavailable, **When** the LLM enhancer is selected, **Then** the system fails with a clear strategy-specific dependency/runtime error instead of affecting other strategies.
+4. **Given** the local model is available, **When** the LLM enhancer runs, **Then** it uses a local `llama.cpp` `llama-server` OpenAI-compatible endpoint with a lightweight default model and consumes structured evidence rather than the full PDF text.
 
 ### Edge Cases
 
@@ -98,7 +98,7 @@ As a developer, I can select a local-LLM-enhanced strategy that starts from the 
 - **FR-005**: System MUST add a semantic section classifier strategy that may use `unstructured` and still returns standard `ClassificationResult` outputs.
 - **FR-006**: System MUST support an optional model-assisted classifier mode that uses LangChain and/or LangGraph with a local model runtime to disambiguate candidate boundaries.
 - **FR-007**: System MUST add a new LLM-enhanced classifier strategy that uses the `layout` strategy as its candidate generator and performs a second-pass validation over proposed cuts and titles.
-- **FR-008**: The LLM-enhanced strategy MUST use `Ollama` with a lightweight local model, with `phi3.5` mini as the default model profile for MVP planning.
+- **FR-008**: The LLM-enhanced strategy MUST use a local `llama.cpp` `llama-server` OpenAI-compatible endpoint with a lightweight model profile for MVP planning.
 - **FR-009**: Model-assisted logic and the LLM enhancer MUST consume structured candidate evidence rather than raw full-document text as direct model input.
 - **FR-010**: The LLM enhancer MUST be able to confirm or reject proposed layout cuts and MUST be able to correct the chunk title/filename when local evidence indicates the original label is wrong.
 - **FR-011**: Strategy-specific dependency failures MUST surface clear, isolated errors and MUST NOT break unrelated strategies.
@@ -118,7 +118,7 @@ As a developer, I can select a local-LLM-enhanced strategy that starts from the 
 ### Measurable Outcomes
 
 - **SC-001**: At least one new strategy (`heuristic`) is available via normal strategy selection and produces valid chunk outputs end-to-end.
-- **SC-001a**: A separate LLM-enhanced strategy is available via normal strategy selection and can validate `layout`-produced cuts using a local `Ollama` runtime.
+- **SC-001a**: A separate LLM-enhanced strategy is available via normal strategy selection and can validate `layout`-produced cuts using a local `llama-server` runtime.
 - **SC-002**: Existing `fixed`, `regex`, and `index` strategy tests continue to pass without required behavior changes.
 - **SC-003**: New strategy-specific tests cover successful classification and dependency-missing/error paths for optional variants.
 - **SC-004**: On the curated evaluation set for feature 002, `heuristic` reduces obvious boundary failures compared to feature 001 baselines as defined in plan/testing docs.
@@ -129,5 +129,5 @@ As a developer, I can select a local-LLM-enhanced strategy that starts from the 
 - Feature 002 targets English-language PDFs only; multilingual robustness is out of scope.
 - Optional strategy dependencies may be installed selectively and should not be global hard requirements for all runs.
 - Local model assistance is experimental and constrained to structured candidate review, cut validation, and title correction, not full autonomous parsing.
-- The local LLM runtime for MVP planning is `Ollama`, and the default lightweight model profile is `phi3.5` mini.
+- The local LLM runtime for MVP planning is `llama.cpp` `llama-server`, and the default lightweight model profile is `ggml-org/gemma-3-1b-it-GGUF`.
 - CLI/service contracts remain stable; callers only need strategy selection changes to use new classifiers.

@@ -11,17 +11,19 @@ from bookcast_chapter_forge.services.pdf_parser_service import PdfParserService
 
 
 def build_service(output_dir: str | Path = "output") -> PdfParserService:
+    """Create the default parser service used by the CLI entrypoint."""
     return PdfParserService(output_writer=OutputWriter(output_dir=output_dir), logger=EventLogger())
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for selecting the source PDFs and chunking strategy."""
     parser = argparse.ArgumentParser(description="Split PDF books into chapter-ready chunks")
     parser.add_argument("--input", help="Path to a single PDF file")
     parser.add_argument("--books-dir", default="books", help="Directory containing PDF books")
     parser.add_argument("--config", default="configs/config.yaml", help="Path to the YAML config file")
     parser.add_argument(
         "--strategy",
-        choices=["fixed", "regex", "index", "layout", "semantic", "model", "heuristic"],
+        choices=["fixed", "regex", "index", "layout", "semantic", "model", "heuristic", "llm"],
         default="fixed",
     )
     parser.add_argument("--output-dir", default="output")
@@ -30,6 +32,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the parser service and print either human or JSON output."""
     args = parse_args(argv)
     service = build_service(output_dir=args.output_dir)
     try:

@@ -5,15 +5,19 @@ from collections import defaultdict
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
 from bookcast_chapter_forge.classifiers.index_chapter_classifier import IndexChapterClassifier
 from bookcast_chapter_forge.classifiers.layout_aware_classifier import LayoutAwareClassifier
-from bookcast_chapter_forge.classifiers.model_assisted_classifier import ModelAssistedClassifier
 from bookcast_chapter_forge.classifiers.regex_chapter_classifier import RegexChapterClassifier
 from bookcast_chapter_forge.classifiers.semantic_section_classifier import SemanticSectionClassifier
 from bookcast_chapter_forge.classifiers.utils import build_chunks, first_non_empty_line
 from bookcast_chapter_forge.domain.entities import BoundaryCandidate, BookDocument, ClassificationResult, ParserConfig, SignalEvidence
+from bookcast_chapter_forge.infrastructure.logging import EVENT_BOUNDARY_DECISION, EventLogger
 
 
 class HeuristicIntegratorClassifier(ChapterClassifier):
     """Combine corroborated evidence from multiple strategies into one deterministic chapter plan."""
+
+    def __init__(self, logger: EventLogger | None = None) -> None:
+        """Bind a logger so integrator decisions can be inspected during real runs."""
+        self._logger = logger or EventLogger()
 
     @property
     def strategy_name(self) -> str:
@@ -28,6 +32,13 @@ class HeuristicIntegratorClassifier(ChapterClassifier):
         selected = self._select_candidates(candidates)
         starts = [(candidate.page, self._title_for_candidate(book, candidate)) for candidate in selected]
         chunks = build_chunks(starts, book.page_count)
+        self._logger.progress(
+            EVENT_BOUNDARY_DECISION,
+            strategy=self.strategy_name,
+            path=str(book.path),
+            boundaries=[candidate.page for candidate in selected],
+            warnings=len(warnings),
+        )
         return ClassificationResult(
             chunks=chunks,
             warnings=tuple(warnings),
@@ -69,8 +80,6 @@ class HeuristicIntegratorClassifier(ChapterClassifier):
             ("semantic", config.heuristic_signal_weights.get("semantic", 2.0), SemanticSectionClassifier()),
             ("regex", config.heuristic_signal_weights.get("regex", 1.0), RegexChapterClassifier()),
         ]
-        if config.model_enabled:
-            sources.append(("model", config.heuristic_signal_weights.get("model", 2.0), ModelAssistedClassifier()))
         return tuple(sources)
 
     def _select_candidates(self, candidates: list[BoundaryCandidate]) -> list[BoundaryCandidate]:

@@ -8,11 +8,12 @@ from bookcast_chapter_forge.classifiers.fixed_page_classifier import FixedPageCl
 from bookcast_chapter_forge.classifiers.heuristic_integrator_classifier import HeuristicIntegratorClassifier
 from bookcast_chapter_forge.classifiers.index_chapter_classifier import IndexChapterClassifier
 from bookcast_chapter_forge.classifiers.layout_aware_classifier import LayoutAwareClassifier
+from bookcast_chapter_forge.classifiers.llm_enhanced_classifier import LLMEnhancedClassifier
 from bookcast_chapter_forge.classifiers.model_assisted_classifier import ModelAssistedClassifier
 from bookcast_chapter_forge.classifiers.regex_chapter_classifier import RegexChapterClassifier
 from bookcast_chapter_forge.classifiers.semantic_section_classifier import SemanticSectionClassifier
 from bookcast_chapter_forge.domain.entities import BookDocument, ClassificationResult
-from bookcast_chapter_forge.infrastructure.logging import EventLogger
+from bookcast_chapter_forge.infrastructure.logging import EVENT_CLASSIFICATION_WARNING, EventLogger
 from bookcast_chapter_forge.infrastructure.pdf_reader import PdfReaderAdapter
 from bookcast_chapter_forge.services.config_loader import ConfigLoader
 from bookcast_chapter_forge.services.output_writer import OutputWriter
@@ -27,6 +28,8 @@ class ProcessedBook:
 
 
 class PdfParserService:
+    """Coordinates config loading, PDF reading, classification, and output writing."""
+
     def __init__(
         self,
         config_loader: ConfigLoader | None = None,
@@ -35,21 +38,25 @@ class PdfParserService:
         logger: EventLogger | None = None,
         classifiers: dict[str, ChapterClassifier] | None = None,
     ) -> None:
+        """Build the service and register the available classification strategies."""
         self.config_loader = config_loader or ConfigLoader()
         self.pdf_reader = pdf_reader or PdfReaderAdapter()
         self.output_writer = output_writer or OutputWriter()
         self.logger = logger or EventLogger()
+        layout_classifier = LayoutAwareClassifier(logger=self.logger)
         self.classifiers = classifiers or {
             "fixed": FixedPageClassifier(),
             "regex": RegexChapterClassifier(),
             "index": IndexChapterClassifier(),
-            "layout": LayoutAwareClassifier(),
+            "layout": layout_classifier,
             "semantic": SemanticSectionClassifier(),
             "model": ModelAssistedClassifier(),
-            "heuristic": HeuristicIntegratorClassifier(),
+            "heuristic": HeuristicIntegratorClassifier(logger=self.logger),
+            "llm": LLMEnhancedClassifier(layout_classifier=layout_classifier, logger=self.logger),
         }
 
     def process(self, strategy: str, config_path: str | Path, input_path: str | Path | None = None, books_dir: str | Path | None = None) -> list[ProcessedBook]:
+        """Process either one input PDF or every PDF in a directory with the selected strategy."""
         config = self.config_loader.load(config_path)
         if input_path:
             return [self.process_book(Path(input_path), strategy, config)]
@@ -58,6 +65,7 @@ class PdfParserService:
         return [self.process_book(path, strategy, config) for path in pdf_paths]
 
     def process_book(self, path: Path, strategy: str, config) -> ProcessedBook:
+        """Classify one book and write all resulting chunk PDFs to disk."""
         if path.suffix.lower() != ".pdf":
             raise ValueError(f"{path} is not a PDF")
         classifier = self.classifiers[strategy]
@@ -66,7 +74,11 @@ class PdfParserService:
         self._validate_book(book, strategy)
         result = classifier.classify(book, config)
         self._validate_classification_result(book, strategy, result)
+        for warning in result.warnings:
+            self.logger.warning(EVENT_CLASSIFICATION_WARNING, path=str(path), strategy=strategy, message=warning)
         self.logger.progress("classification_complete", path=str(path), chunks=len(result.chunks), strategy=strategy)
+        if result.metadata:
+            self.logger.progress("classification_metadata", path=str(path), strategy=strategy, metadata=result.metadata)
         try:
             output_files = tuple(self.output_writer.write_book_chunks(book, result.chunks))
         except KeyboardInterrupt:
@@ -76,6 +88,7 @@ class PdfParserService:
         return ProcessedBook(source=path, output_files=output_files, strategy=strategy, chunk_count=len(output_files))
 
     def _validate_book(self, book: BookDocument, strategy: str) -> None:
+        """Reject empty or non-extractable documents before classification begins."""
         if book.page_count == 0:
             raise ValueError("The PDF has no pages")
         if strategy == "fixed":
@@ -84,6 +97,7 @@ class PdfParserService:
             raise ValueError("The PDF does not contain extractable text")
 
     def _validate_classification_result(self, book: BookDocument, strategy: str, result: ClassificationResult) -> None:
+        """Protect the writer from obviously invalid classifier outputs."""
         if strategy == "fixed":
             return
         if not result.chunks:

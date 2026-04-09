@@ -9,6 +9,7 @@ from pypdf import PdfReader
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
 from bookcast_chapter_forge.classifiers.utils import build_chunks, first_non_empty_line
 from bookcast_chapter_forge.domain.entities import BookDocument, ClassificationResult, ParserConfig
+from bookcast_chapter_forge.infrastructure.logging import EVENT_BOUNDARY_DECISION, EVENT_LAYOUT_EVIDENCE, EventLogger
 
 
 @dataclass(frozen=True)
@@ -22,6 +23,10 @@ class _FontFragment:
 
 class LayoutAwareClassifier(ChapterClassifier):
     """Infer chapter starts from page-local heading typography rather than plain text alone."""
+
+    def __init__(self, logger: EventLogger | None = None) -> None:
+        """Bind a logger so layout evidence is visible during real CLI runs."""
+        self._logger = logger or EventLogger()
 
     @property
     def strategy_name(self) -> str:
@@ -39,7 +44,14 @@ class LayoutAwareClassifier(ChapterClassifier):
         if not starts:
             raise ValueError("layout strategy could not identify layout-aware chapter starts")
 
+        self._logger.progress(EVENT_LAYOUT_EVIDENCE, strategy=self.strategy_name, signals=len(starts), path=str(book.path))
         chunks = build_chunks(starts, book.page_count)
+        self._logger.progress(
+            EVENT_BOUNDARY_DECISION,
+            strategy=self.strategy_name,
+            path=str(book.path),
+            boundaries=[start_page for start_page, _title in starts],
+        )
         return ClassificationResult(
             chunks=chunks,
             metadata={"strategy": self.strategy_name, "evidence": "page-typography", "signals": len(starts)},

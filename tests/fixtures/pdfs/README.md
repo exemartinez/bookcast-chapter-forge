@@ -1,8 +1,5 @@
-# PDF Fixture Notes
+# PDF Fixtures
 
-This directory stores fixture PDFs for feature `002-heuristic-chapter-detection`.
+This directory is reserved for future real or synthetic fixture PDFs used by feature `002-heuristic-chapter-detection`.
 
-- `messy-layout-*`: samples where heading typography/spacing is useful
-- `sectioned-*`: samples where semantic title/section transitions are useful
-
-Keep fixtures small and synthetic unless a real-book case is explicitly marked `slow`.
+Current tests mostly rely on synthetic in-memory page text and temporary blank PDFs. Real-book validation remains in the slow integration suite outside this folder.

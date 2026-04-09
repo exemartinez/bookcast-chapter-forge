@@ -69,6 +69,12 @@ def test_loads_optional_strategy_sections(tmp_path: Path) -> None:
                 "  signal_weights:",
                 "    layout: 3.0",
                 "    semantic: 2.0",
+                "llm:",
+                "  provider: ollama",
+                "  model: phi3.5",
+                "  timeout_seconds: 12",
+                "  review_window: 2",
+                "  max_excerpt_chars: 180",
             ]
         ),
         encoding="utf-8",
@@ -80,3 +86,26 @@ def test_loads_optional_strategy_sections(tmp_path: Path) -> None:
     assert config.semantic_title_patterns == ("(?i)^part",)
     assert config.model_enabled is True
     assert config.heuristic_signal_weights["layout"] == 3.0
+    assert config.llm_provider == "ollama"
+    assert config.llm_model == "phi3.5"
+    assert config.llm_timeout_seconds == 12.0
+    assert config.llm_review_window == 2
+    assert config.llm_max_excerpt_chars == 180
+
+
+def test_rejects_invalid_llm_window(tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "fixed_page:",
+                "  max_pages_per_chunk: 2",
+                "llm:",
+                "  review_window: -1",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="llm.review_window"):
+        ConfigLoader().load(config_path)

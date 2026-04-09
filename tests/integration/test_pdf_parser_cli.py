@@ -112,3 +112,17 @@ def test_cli_accepts_heuristic_strategy_selection(monkeypatch, capsys) -> None:
 
     assert exit_code == 0
     assert json.loads(capsys.readouterr().out)["strategy"] == "heuristic"
+
+
+def test_cli_accepts_llm_strategy_selection(monkeypatch, capsys) -> None:
+    class FakeService:
+        def process(self, strategy, config_path, input_path=None, books_dir=None):
+            assert strategy == "llm"
+            return []
+
+    monkeypatch.setattr("bookcast_chapter_forge.cli.pdf_parser.build_service", lambda output_dir="output": FakeService())
+
+    exit_code = main(["--strategy", "llm", "--json"])
+
+    assert exit_code == 0
+    assert json.loads(capsys.readouterr().out)["strategy"] == "llm"

@@ -5,12 +5,12 @@
 
 ## Summary
 
-Add new chapter-detection strategies as additive modules implementing the existing `ChapterClassifier` contract, without refactoring current `fixed`, `regex`, or `index` behavior. Delivery order is: (1) layout-aware classifier, (2) semantic section classifier, (3) hybrid heuristic integrator that combines multiple corroborating deterministic signals into final boundary decisions, and (4) a local-LLM enhancer that starts from `layout` candidates and uses `Ollama + phi3.5 mini` to validate cuts and correct titles. The existing CLI/service pipeline remains intact; only strategy registration and classifier-local glue are touched.
+Add new chapter-detection strategies as additive modules implementing the existing `ChapterClassifier` contract, without refactoring current `fixed`, `regex`, or `index` behavior. Delivery order is: (1) layout-aware classifier, (2) semantic section classifier, (3) hybrid heuristic integrator that combines multiple corroborating deterministic signals into final boundary decisions, and (4) a local-LLM enhancer that starts from `layout` candidates and uses `llama.cpp` `llama-server` with a lightweight GGUF model to validate cuts and correct titles. The existing CLI/service pipeline remains intact; only strategy registration and classifier-local glue are touched.
 
 ## Technical Context
 
 **Language/Version**: Python 3.11  
-**Primary Dependencies**: Existing: `pypdf`, `PyYAML`, `pytest`; Optional for this feature: `pymupdf4llm`, `unstructured`, `langchain-ollama` or a thin Ollama HTTP adapter, local `Ollama` runtime with `phi3.5` mini  
+**Primary Dependencies**: Existing: `pypdf`, `PyYAML`, `pytest`; Optional for this feature: `pymupdf4llm`, `unstructured`, local `llama.cpp` `llama-server` exposing an OpenAI-compatible endpoint with a lightweight GGUF model  
 **Storage**: Local filesystem only (`books/`, `configs/`, `output/`)  
 **Testing**: `pytest`, `pytest-cov` (unit + integration; slow markers for larger real-book scenarios)  
 **Target Platform**: macOS/Linux CLI environment  
@@ -71,7 +71,7 @@ src/
     │   ├── layout_aware_classifier.py          # new
     │   ├── semantic_section_classifier.py      # new
     │   ├── heuristic_integrator_classifier.py  # new final deterministic integrator
-    │   └── llm_enhanced_classifier.py          # new layout + Ollama reviewer
+    │   └── llm_enhanced_classifier.py          # new layout + llama.cpp reviewer
     └── infrastructure/
         ├── logging.py
         └── pdf_reader.py
@@ -111,7 +111,7 @@ tests/
    Aggregates evidence from layout-aware + semantic signals plus TOC/page-label/hyperlink/outline cues into final deterministic boundary decisions.
 
 4. **LLM enhancer (P4, after deterministic strategies)**  
-   Starts from `layout`-proposed chunks, builds structured local review packets, and uses `Ollama + phi3.5 mini` to confirm/reject each cut and correct chunk titles/filenames.
+   Starts from `layout`-proposed chunks, builds structured local review packets, and uses `llama.cpp` `llama-server` with a lightweight GGUF model to confirm/reject each cut and correct chunk titles/filenames.
 
 ### Registration and Selection
 
@@ -124,7 +124,7 @@ tests/
 - Optional imports are lazy and classifier-local.
 - Missing optional packages produce clear strategy-specific errors.
 - Baseline install (without optional packages) continues to run existing strategies.
-- The LLM-enhanced strategy additionally requires a reachable local `Ollama` runtime and the configured `phi3.5` mini model to be available.
+- The LLM-enhanced strategy additionally requires a reachable local `llama-server` endpoint and the configured lightweight GGUF model to be available.
 
 ### Deterministic Decision Policy
 
@@ -140,7 +140,7 @@ tests/
 - Research robust layout-signal extraction patterns using `pymupdf4llm`.
 - Research `unstructured` element taxonomy for chapter/section detection.
 - Define candidate-scoring and deterministic tie-break policy for integrator.
-- Define LLM review packet schema, prompt contract, and local `Ollama + phi3.5 mini` runtime constraints.
+- Define LLM review packet schema, prompt contract, and local `llama.cpp` `llama-server` runtime constraints.
 - Produce `research.md` with decisions, rationale, and alternatives.
 
 ### Phase 1 Design
@@ -151,7 +151,7 @@ tests/
   - baseline run without optional deps
   - strategy-specific runs with optional deps
   - expected behavior on dependency-missing paths
-  - local `Ollama` setup and `phi3.5` mini pull instructions for the LLM enhancer
+  - local `llama-server` setup and model-launch instructions for the LLM enhancer
 - Re-check constitution gates with completed design artifacts.
 
 ### Phase 2 Planning Handoff
@@ -168,7 +168,7 @@ tests/
 5. Add failing unit/integration tests for hybrid integrator combining deterministic signals from prior strategies.
 6. Implement hybrid integrator and deterministic tie-break rules until tests pass.
 7. Add failing unit/integration tests for the LLM enhancer reviewing `layout` cuts and correcting titles.
-8. Implement local `Ollama + phi3.5 mini` review flow until tests pass.
+8. Implement local `llama-server` review flow until tests pass.
 9. Add CLI/service integration tests for registration and independent strategy selection.
 10. Re-run existing `fixed|regex|index` tests to prove no regressions.
 
@@ -179,7 +179,7 @@ tests/
 - Signal disagreement causing unstable chapter boundaries.  
   - Mitigation: explicit scoring + deterministic tie-break hierarchy + warning metadata.
 - LLM-enhanced review introducing nondeterminism, latency, or runtime friction.  
-  - Mitigation: keep optional/experimental, bounded structured evidence input, local `Ollama` only, deterministic fallback/error path when runtime is unavailable.
+  - Mitigation: keep optional/experimental, bounded structured evidence input, local `llama-server` only, deterministic fallback/error path when runtime is unavailable.
 - Overreaching scope into pipeline refactor.  
   - Mitigation: enforce additive-only tasks; reject non-essential orchestration changes.
 
