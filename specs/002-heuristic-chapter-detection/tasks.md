@@ -139,13 +139,17 @@
 - [x] T044 [P] [US4] Add unit tests proving the LLM enhancer consumes structured local evidence rather than raw full-document text in `tests/unit/test_llm_enhanced_classifier.py`
 - [x] T045 [P] [US4] Add integration test for `llm` strategy pipeline behavior in `tests/integration/test_pdf_parser_service.py`
 - [x] T046 [P] [US4] Add CLI integration test for `--strategy llm` in `tests/integration/test_pdf_parser_cli.py`
+- [x] T046a [P] [US4] Add unit tests for page-kind classification and rejection of `toc`, `chapter_summary`, and `front_matter` candidates in `tests/unit/test_llm_enhanced_classifier.py`
+- [x] T046b [P] [US4] Add unit tests proving leading non-body chunks are discarded from final `llm` output in `tests/unit/test_llm_enhanced_classifier.py`
+- [x] T046c [P] [US4] Add unit tests proving duplicate normalized chapter suffixes keep the longer chunk and, on ties, the later chunk in `tests/unit/test_llm_enhanced_classifier.py` and/or `tests/unit/test_output_writer.py`
 
 ### Implementation for User Story 4
 
 - [x] T047 [US4] Implement `LLMEnhancedClassifier` in `src/bookcast_chapter_forge/classifiers/llm_enhanced_classifier.py`
 - [x] T048 [US4] Use `LayoutAwareClassifier` as the sole candidate generator inside `src/bookcast_chapter_forge/classifiers/llm_enhanced_classifier.py`
 - [x] T049 [US4] Add OpenAI-compatible `llama-server` adapter and lightweight GGUF default model profile in `src/bookcast_chapter_forge/classifiers/llm_enhanced_classifier.py`
-- [x] T050 [US4] Implement structured prompt/response contract that can keep/reject cuts and correct titles in `src/bookcast_chapter_forge/classifiers/llm_enhanced_classifier.py`
+- [x] T050 [US4] Implement page-kind validation plus structured prompt/response contract so suspicious cuts are classified as `body_chapter_start`, `toc`, `chapter_summary`, `front_matter`, or `other`, with only body chapters kept in `src/bookcast_chapter_forge/classifiers/llm_enhanced_classifier.py`
+- [x] T050a [US4] Implement deterministic duplicate normalized chapter suffix cleanup so only the longest surviving chunk is kept and ties keep the later chunk in `src/bookcast_chapter_forge/classifiers/llm_enhanced_classifier.py` and/or `src/bookcast_chapter_forge/services/output_writer.py`
 - [x] T051 [US4] Register `llm` strategy in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [x] T052 [US4] Add strategy-specific config parsing and validation for `llm` settings in `src/bookcast_chapter_forge/services/config_loader.py`
 

@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add new chapter-detection strategies as additive modules implementing the existing `ChapterClassifier` contract, without refactoring current `fixed`, `regex`, or `index` behavior. Delivery order is: (1) layout-aware classifier, (2) semantic section classifier, (3) hybrid heuristic integrator that combines multiple corroborating deterministic signals into final boundary decisions, and (4) a local-LLM enhancer that starts from `layout` candidates and uses `llama.cpp` `llama-server` with a lightweight GGUF model to validate cuts and correct titles. The existing CLI/service pipeline remains intact; only strategy registration and classifier-local glue are touched.
+Add new chapter-detection strategies as additive modules implementing the existing `ChapterClassifier` contract, without refactoring current `fixed`, `regex`, or `index` behavior. Delivery order is: (1) layout-aware classifier, (2) semantic section classifier, (3) hybrid heuristic integrator that combines multiple corroborating deterministic signals into final boundary decisions, and (4) a local-LLM enhancer that starts from `layout` candidates and uses `llama.cpp` `llama-server` with a lightweight GGUF model to validate that a candidate page is the real first page of a body chapter, reject TOC/chapter-summary/front-matter false positives, and correct titles. The existing CLI/service pipeline remains intact; only strategy registration and classifier-local glue are touched.
 
 ## Technical Context
 
@@ -96,7 +96,7 @@ tests/
   - `BoundaryCandidate`: candidate start location + supporting evidence
   - `BoundaryDecision`: resolved ordered boundaries used to build `ChapterChunk`s
   - `LLMReviewPacket`: structured local evidence bundle for one proposed `layout` cut
-  - `LLMReviewDecision`: keep/reject/title-correction response from the local model
+  - `LLMReviewDecision`: page-kind classification plus keep/reject/title-correction response from the local model
 - Keep output contract unchanged: all strategies return `ClassificationResult`.
 
 ### Strategy Delivery Order
@@ -111,7 +111,7 @@ tests/
    Aggregates evidence from layout-aware + semantic signals plus TOC/page-label/hyperlink/outline cues into final deterministic boundary decisions.
 
 4. **LLM enhancer (P4, after deterministic strategies)**  
-   Starts from `layout`-proposed chunks, builds structured local review packets, and uses `llama.cpp` `llama-server` with a lightweight GGUF model to confirm/reject each cut and correct chunk titles/filenames.
+   Starts from `layout`-proposed chunks, selects only suspicious cuts for review, builds tightly bounded local review packets, and uses `llama.cpp` `llama-server` with a lightweight GGUF model to classify whether each candidate page is a true body-chapter start or non-body material, confirm/reject each cut, correct chunk titles/filenames, and deterministically deduplicate duplicate normalized chapter suffixes before final output.
 
 ### Registration and Selection
 
@@ -131,7 +131,11 @@ tests/
 - Heuristic and non-model paths must be deterministic for same input/config.
 - Tie-break rules are explicit and documented (signal precedence and confidence ordering).
 - LLM-enhanced review consumes structured local evidence packets only; raw full-document prompts are out of scope.
-- The LLM review layer is advisory over `layout` output and must return structured keep/reject/title decisions.
+- The LLM review layer is advisory over `layout` output and must return structured page-kind plus keep/reject/title decisions.
+- The LLM review layer must be selective: obvious interior chapter cuts should pass through without model calls.
+- The LLM review layer is the authority for deciding whether a suspicious candidate is a true `body_chapter_start` or non-body material such as `toc`, `chapter_summary`, `front_matter`, or `other`.
+- Final `llm` output must contain body chapters only, which means leading non-body candidates are discarded after review.
+- Final `llm` output must also collapse duplicate normalized chapter suffixes by keeping the longer chunk and, on ties, the later chunk.
 
 ## Delivery Phases
 
@@ -140,7 +144,7 @@ tests/
 - Research robust layout-signal extraction patterns using `pymupdf4llm`.
 - Research `unstructured` element taxonomy for chapter/section detection.
 - Define candidate-scoring and deterministic tie-break policy for integrator.
-- Define LLM review packet schema, prompt contract, and local `llama.cpp` `llama-server` runtime constraints.
+- Define LLM review packet schema, page-kind prompt contract, and local `llama.cpp` `llama-server` runtime constraints.
 - Produce `research.md` with decisions, rationale, and alternatives.
 
 ### Phase 1 Design
@@ -152,6 +156,7 @@ tests/
   - strategy-specific runs with optional deps
   - expected behavior on dependency-missing paths
   - local `llama-server` setup and model-launch instructions for the LLM enhancer
+  - expected behavior when TOC or chapter-summary pages mimic chapter headings
 - Re-check constitution gates with completed design artifacts.
 
 ### Phase 2 Planning Handoff
@@ -167,8 +172,8 @@ tests/
 4. Implement semantic classifier until tests pass.
 5. Add failing unit/integration tests for hybrid integrator combining deterministic signals from prior strategies.
 6. Implement hybrid integrator and deterministic tie-break rules until tests pass.
-7. Add failing unit/integration tests for the LLM enhancer reviewing `layout` cuts and correcting titles.
-8. Implement local `llama-server` review flow until tests pass.
+7. Add failing unit/integration tests for the LLM enhancer classifying suspicious candidate pages, rejecting non-body material, correcting titles, and collapsing duplicate normalized chapter suffixes.
+8. Implement local `llama-server` review flow plus deterministic duplicate cleanup until tests pass.
 9. Add CLI/service integration tests for registration and independent strategy selection.
 10. Re-run existing `fixed|regex|index` tests to prove no regressions.
 
@@ -179,7 +184,9 @@ tests/
 - Signal disagreement causing unstable chapter boundaries.  
   - Mitigation: explicit scoring + deterministic tie-break hierarchy + warning metadata.
 - LLM-enhanced review introducing nondeterminism, latency, or runtime friction.  
-  - Mitigation: keep optional/experimental, bounded structured evidence input, local `llama-server` only, deterministic fallback/error path when runtime is unavailable.
+  - Mitigation: keep optional/experimental, bounded structured evidence input, local `llama-server` only, review only suspicious cuts, and use deterministic fallback/error path when runtime is unavailable.
+- Summary or TOC spreads with large chapter headings can still confuse purely visual detection.  
+  - Mitigation: require the LLM reviewer to classify page kind and reject non-body pages even when the visible heading text looks like a chapter title.
 - Overreaching scope into pipeline refactor.  
   - Mitigation: enforce additive-only tasks; reject non-essential orchestration changes.
 

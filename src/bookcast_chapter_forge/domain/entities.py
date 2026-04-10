@@ -104,6 +104,7 @@ class LLMReviewPacket:
 class LLMReviewDecision:
     """Carries the LLM reviewer decision for one proposed chunk."""
 
+    page_kind: str
     keep: bool
     corrected_title: str
     rationale: str = ""
