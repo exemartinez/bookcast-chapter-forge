@@ -90,3 +90,33 @@ def test_llm_classifier_rejects_non_llama_cpp_provider() -> None:
 
     with pytest.raises(ValueError, match="provider=llama.cpp"):
         classifier.classify(book, config)
+
+
+def test_llm_classifier_accepts_markdown_fenced_json() -> None:
+    classifier = LLMEnhancedClassifier(layout_classifier=StubLayoutClassifier())
+
+    decision = classifier._parse_review_decision(
+        '```json\n{"keep": true, "corrected_title": "Chapter I", "rationale": "heading matches"}\n```',
+        classifier._build_review_packet(
+            BookDocument(path=Path("book.pdf"), page_texts=("Preface", "More", "Chapter I", "Body")),
+            list(StubLayoutClassifier().classify(BookDocument(path=Path("book.pdf"), page_texts=("Preface", "More", "Chapter I", "Body")), ParserConfig(max_pages_per_chunk=10)).chunks),
+            1,
+            ParserConfig(max_pages_per_chunk=10),
+        ),
+    )
+
+    assert decision.keep is True
+    assert decision.corrected_title == "Chapter I"
+
+
+def test_llm_classifier_falls_back_on_unparsable_model_output(monkeypatch) -> None:
+    classifier = LLMEnhancedClassifier(layout_classifier=StubLayoutClassifier())
+    book = BookDocument(path=Path("book.pdf"), page_texts=("Preface", "More", "Chapter I", "Body"))
+    config = ParserConfig(max_pages_per_chunk=10)
+
+    monkeypatch.setattr(classifier, "_invoke_chat_completion", lambda prompt, config: "I think this should probably be kept.")
+
+    result = classifier.classify(book, config)
+
+    assert len(result.chunks) == 2
+    assert any("fallback" in warning for warning in result.warnings)

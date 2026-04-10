@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from urllib import error, request
 
 from bookcast_chapter_forge.classifiers.base import ChapterClassifier
@@ -45,7 +46,18 @@ class LLMEnhancedClassifier(ChapterClassifier):
         warnings = list(layout_result.warnings)
         for index, chunk in enumerate(chunks):
             packet = self._build_review_packet(book, chunks, index, config)
-            decision = self._review_packet(packet, config)
+            try:
+                decision = self._review_packet(packet, config)
+            except ValueError as exc:
+                if not self._is_unrecoverable_review_error(exc):
+                    warnings.append(f"llm fallback on page {chunk.start_page}: {exc}")
+                    decision = LLMReviewDecision(
+                        keep=True,
+                        corrected_title=chunk.title or packet.title,
+                        rationale=f"fallback due to unparsable model output: {exc}",
+                    )
+                else:
+                    raise
             self._logger.progress(
                 EVENT_LLM_REVIEW,
                 page=chunk.start_page,
@@ -87,6 +99,12 @@ class LLMEnhancedClassifier(ChapterClassifier):
                 "kept_chunks": len(normalized_chunks),
             },
         )
+
+    def _is_unrecoverable_review_error(self, exc: ValueError) -> bool:
+        """Treat connectivity/runtime failures as fatal, but malformed answers as recoverable."""
+        message = str(exc).lower()
+        fatal_markers = ("reachable local llama-server runtime", "timed out while waiting for llama-server")
+        return any(marker in message for marker in fatal_markers)
 
     def _require_supported_provider(self, config: ParserConfig) -> None:
         """Limit the MVP implementation to the provider defined in the spec."""
@@ -136,6 +154,7 @@ class LLMEnhancedClassifier(ChapterClassifier):
         prompt_lines = [
             "You are reviewing a proposed chapter cut from a PDF.",
             "Return strict JSON with keys: keep, corrected_title, rationale.",
+            "Do not use markdown fences, comments, or prose outside the JSON object.",
             "Use only the evidence provided. Do not invent missing pages.",
             "Prefer rejecting front matter, table of contents pages, and clearly mislabeled titles.",
             f"Proposed title: {packet.title}",
@@ -183,8 +202,9 @@ class LLMEnhancedClassifier(ChapterClassifier):
 
     def _parse_review_decision(self, raw_response: str, packet: LLMReviewPacket) -> LLMReviewDecision:
         """Parse the model's JSON response into a typed review decision."""
+        cleaned_response = self._extract_json_object(raw_response)
         try:
-            parsed = json.loads(raw_response)
+            parsed = json.loads(cleaned_response)
         except json.JSONDecodeError as exc:
             raise ValueError("llm strategy received invalid JSON from the local model") from exc
         return LLMReviewDecision(
@@ -192,3 +212,16 @@ class LLMEnhancedClassifier(ChapterClassifier):
             corrected_title=str(parsed.get("corrected_title", packet.title)).strip() or packet.title,
             rationale=str(parsed.get("rationale", "")).strip(),
         )
+
+    def _extract_json_object(self, raw_response: str) -> str:
+        """Recover the first JSON object from markdown-fenced or mixed model output."""
+        stripped = raw_response.strip()
+        fenced_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", stripped, flags=re.DOTALL)
+        if fenced_match:
+            return fenced_match.group(1)
+
+        start = stripped.find("{")
+        end = stripped.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            return stripped[start : end + 1]
+        return stripped
