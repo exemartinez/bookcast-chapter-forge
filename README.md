@@ -2,7 +2,7 @@
 
 Turn long-form books into NotebookLM-ready PDF chunks for AI-generated podcast workflows.
 
-Current version: `0.2.0`
+Current version: `0.3.0`
 
 `bookcast-chapter-forge` is a Python CLI project that reads source PDFs, detects logical chunk boundaries, and exports one PDF per chunk. It currently supports:
 
@@ -13,11 +13,13 @@ Current version: `0.2.0`
 - semantic section detection
 - deterministic heuristic signal integration
 - local LLM review over layout-derived cuts
+- adaptive wrapper fallback over parser strategies
 
 ## Feature Status
 
 Feature `001-pdf-chapter-classifier` is closed as `v0.1.0`.
-Feature `002-heuristic-chapter-detection` is the current additive heuristic layer.
+Feature `002-heuristic-chapter-detection` is implemented.
+Feature `003-adaptive-strategy-fallback` adds the adaptive default wrapper flow.
 
 That version should be treated as a pragmatic baseline, not a universally reliable chapter parser. Results depend heavily on the PDF's internal structure:
 
@@ -34,6 +36,7 @@ The current implemented features focus on PDF parsing and chunk generation.
 - Input: local PDF files
 - Output: one PDF per chunk in `output/`
 - Strategies:
+  - `adaptive` (default wrapper)
   - `fixed`
   - `regex`
   - `index`
@@ -66,6 +69,16 @@ pip install -r requirements.txt
 ## Usage
 
 The source package lives under `src/`, so run the CLI with `PYTHONPATH=src`.
+
+Split a single PDF with the default adaptive wrapper:
+
+```bash
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser \
+  --input "books/Building LLMs for Production_ Enhancing LLM Abilities -- Peters, Louie & Bouchard, Louis-François -- 2024.pdf" \
+  --config configs/config.yaml \
+  --output-dir output \
+  --json
+```
 
 Split a single PDF with the fixed-page strategy:
 
@@ -112,6 +125,9 @@ PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/exa
 
 # LLM review strategy (requires local llama.cpp llama-server)
 PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy llm --output-dir output
+
+# Adaptive wrapper (default if --strategy is omitted)
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy adaptive --output-dir output
 ```
 
 Process all PDFs in `books/`:
@@ -135,12 +151,14 @@ The chunking behavior is configured in `configs/config.yaml`.
 - `semantic.*`: semantic title-matching patterns
 - `heuristic.*`: deterministic signal weights
 - `llm.*`: local llama-server review settings for validating layout-derived cuts
+- `adaptive.*`: fallback order and sensibility-review thresholds for the default wrapper flow
 
 ## Optional Dependencies
 
 - `pymupdf4llm`: required for `layout`
 - `unstructured`: required for `semantic`
 - local `llama.cpp` `llama-server`: required for `llm`
+- local `llama.cpp` `llama-server`: also required when `adaptive` reaches low-file-count LLM sensibility review or the `llm` fallback step
 
 Install `llama.cpp` and start the default local review server:
 
@@ -163,6 +181,7 @@ What `v0.2.0` does well:
 - detects some chapter starts from layout signals when typography is stronger than the text-only layer
 - can use semantic title elements when `unstructured` produces usable title blocks
 - can review layout-derived cuts with a bounded local LLM prompt when `llm` is selected
+- can use `adaptive` as the default parser path and automatically try `regex -> layout -> llm`
 
 What `v0.2.0` does not guarantee:
 
@@ -213,6 +232,7 @@ The current implementation was validated against:
 - `semantic` may return no useful section boundaries when the semantic partitioner cannot recover good title elements.
 - `heuristic` is deterministic and explainable, but exotic PDFs can still defeat combined signals.
 - `llm` is a second-pass reviewer over `layout`, not a full autonomous parser or a whole-document reasoning system.
+- `adaptive` is a wrapper over parser execution, not a replacement for explicit strategy control.
 - Bible-shaped PDFs expose the limits of a generic strategy very quickly:
   - Roman-numeral front matter may work in one file and fail in another
   - back matter may still be interpreted as a valid chunk

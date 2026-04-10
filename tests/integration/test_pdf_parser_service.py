@@ -89,3 +89,48 @@ def test_processes_single_pdf_with_optional_strategy(book_document_factory, tmp_
     for strategy in ("layout", "semantic", "heuristic", "llm"):
         processed = service.process(strategy, config_path, input_path=book.path)
         assert processed[0].chunk_count == 1
+
+
+def test_processes_single_pdf_with_adaptive_wrapper(book_document_factory, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "fixed_page:\n  max_pages_per_chunk: 2\nadaptive:\n  min_output_files: 1\n  fallback_order:\n    - regex\n    - layout\n    - llm\n",
+        encoding="utf-8",
+    )
+    book = book_document_factory("single.pdf", ["Chapter 1", "Body", "Tail"])
+
+    class FailingRegexClassifier(ChapterClassifier):
+        @property
+        def strategy_name(self) -> str:
+            return "regex"
+
+        def classify(self, book, config: ParserConfig) -> ClassificationResult:
+            raise ValueError("regex failed")
+
+    class LayoutClassifier(ChapterClassifier):
+        @property
+        def strategy_name(self) -> str:
+            return "layout"
+
+        def classify(self, book, config: ParserConfig) -> ClassificationResult:
+            return ClassificationResult(chunks=(ChapterChunk(order=1, start_page=1, end_page=2, title="Chapter I"),))
+
+    class BookReaderStub:
+        def read_book(self, path: Path) -> BookDocument:
+            return book
+
+    service = PdfParserService(
+        output_writer=OutputWriter(output_dir=tmp_path / "out"),
+        pdf_reader=BookReaderStub(),
+        classifiers={
+            "fixed": StubClassifier(),
+            "regex": FailingRegexClassifier(),
+            "layout": LayoutClassifier(),
+            "llm": LayoutClassifier(),
+        },
+    )
+
+    processed = service.process("adaptive", config_path, input_path=book.path)
+
+    assert processed[0].chunk_count == 1
+    assert processed[0].strategy == "layout"

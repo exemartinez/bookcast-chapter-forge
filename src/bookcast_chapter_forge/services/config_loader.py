@@ -24,6 +24,7 @@ class ConfigLoader:
         model = payload.get("model", {})
         heuristic = payload.get("heuristic", {})
         llm = payload.get("llm", {})
+        adaptive = payload.get("adaptive", {})
         max_pages = int(fixed_page.get("max_pages_per_chunk", 1))
         if max_pages <= 0:
             raise ValueError("fixed_page.max_pages_per_chunk must be greater than zero")
@@ -36,6 +37,9 @@ class ConfigLoader:
         timeout_seconds = float(llm.get("timeout_seconds", 30.0))
         if timeout_seconds <= 0:
             raise ValueError("llm.timeout_seconds must be greater than zero")
+        min_output_files = int(adaptive.get("min_output_files", 3))
+        if min_output_files <= 0:
+            raise ValueError("adaptive.min_output_files must be greater than zero")
 
         return ParserConfig(
             max_pages_per_chunk=max_pages,
@@ -58,6 +62,9 @@ class ConfigLoader:
             llm_review_window=review_window,
             llm_max_excerpt_chars=max_excerpt_chars,
             llm_prompt_instructions=str(llm.get("prompt_instructions", "")),
+            adaptive_fallback_order=tuple(str(item) for item in adaptive.get("fallback_order", ["regex", "layout", "llm"])),
+            adaptive_min_output_files=min_output_files,
+            adaptive_prompt_instructions=str(adaptive.get("prompt_instructions", "")),
         )
 
     def _normalize(self, values: list[str]) -> tuple[str, ...]:
