@@ -66,6 +66,20 @@ source bookcast-ve/bin/activate
 pip install -r requirements.txt
 ```
 
+Install optional strategy dependencies only if you plan to use them:
+
+```bash
+pip install pymupdf4llm
+pip install unstructured
+```
+
+Install and run the local `llama.cpp` server if you plan to use `llm` directly or allow `adaptive` to reach LLM-backed review:
+
+```bash
+brew install llama.cpp
+llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080
+```
+
 ## Usage
 
 The source package lives under `src/`, so run the CLI with `PYTHONPATH=src`.
@@ -120,6 +134,9 @@ PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/exa
 # Semantic strategy (requires optional dependency: unstructured)
 PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy semantic --output-dir output
 
+# Model-assisted strategy (currently experimental and not part of adaptive recovery)
+PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy model --output-dir output
+
 # Hybrid heuristic integrator
 PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser --input books/example.pdf --config configs/config.yaml --strategy heuristic --output-dir output
 
@@ -160,16 +177,9 @@ The chunking behavior is configured in `configs/config.yaml`.
 - local `llama.cpp` `llama-server`: required for `llm`
 - local `llama.cpp` `llama-server`: also required when `adaptive` reaches low-file-count LLM sensibility review or the `llm` fallback step
 
-Install `llama.cpp` and start the default local review server:
-
-```bash
-brew install llama.cpp
-llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080
-```
-
 ## Current Behavior
 
-What `v0.2.0` does well:
+What `v0.3.0` does well:
 
 - splits PDFs deterministically with `fixed`
 - handles many ordinary English books with explicit `Chapter`, `Part`, or `Section` headings via `regex`
@@ -181,9 +191,10 @@ What `v0.2.0` does well:
 - detects some chapter starts from layout signals when typography is stronger than the text-only layer
 - can use semantic title elements when `unstructured` produces usable title blocks
 - can review layout-derived cuts with a bounded local LLM prompt when `llm` is selected
-- can use `adaptive` as the default parser path and automatically try `regex -> layout -> llm`
+- can use `adaptive` as the default parser path and automatically try the primary cascade `regex -> layout -> llm`
+- if that primary adaptive path runs dry, it can continue into a secondary recovery pool containing `index`, `heuristic`, and `semantic`
 
-What `v0.2.0` does not guarantee:
+What `v0.3.0` does not guarantee:
 
 - exact chapter segmentation for arbitrary PDFs
 - correct front-matter handling across all books
@@ -230,9 +241,11 @@ The current implementation was validated against:
 - PDFs with bad text extraction, weak TOCs, or conflicting metadata can still produce incorrect boundaries.
 - `layout` can still misread visually prominent preface or table-of-contents pages as chapters.
 - `semantic` may return no useful section boundaries when the semantic partitioner cannot recover good title elements.
+- `model` remains experimental and is not trusted enough to be part of the adaptive recovery path.
 - `heuristic` is deterministic and explainable, but exotic PDFs can still defeat combined signals.
 - `llm` is a second-pass reviewer over `layout`, not a full autonomous parser or a whole-document reasoning system.
 - `adaptive` is a wrapper over parser execution, not a replacement for explicit strategy control.
+- `adaptive` keeps hard rejection of duplicate normalized output suffixes in the current policy, which can still reject some documents that were mechanically chunked.
 - Bible-shaped PDFs expose the limits of a generic strategy very quickly:
   - Roman-numeral front matter may work in one file and fail in another
   - back matter may still be interpreted as a valid chunk

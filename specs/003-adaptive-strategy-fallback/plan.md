@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add one new adaptive wrapper flow over the existing parser entrypoint in `src/bookcast_chapter_forge/cli/pdf_parser.py`. The wrapper becomes the default parser path when no explicit strategy is provided, executes a deterministic fallback cascade of `regex -> layout -> llm`, evaluates each produced result with an LLM mind plus deterministic sanity checks, and either stops at the first sensible result or continues to the next fallback step. Existing classifier strategies remain unchanged and independently selectable.
+Add one new adaptive wrapper flow over the existing parser entrypoint in `src/bookcast_chapter_forge/cli/pdf_parser.py`. The wrapper becomes the default parser path when no explicit strategy is provided, executes a deterministic primary fallback cascade of `regex -> layout -> llm`, evaluates each produced result with an LLM mind plus deterministic sanity checks, and either stops at the first sensible result or continues to the next fallback step. If that primary path runs dry, the wrapper tries a randomized secondary pool of `index`, `heuristic`, and `semantic`. Existing classifier strategies remain unchanged and independently selectable.
 
 ## Technical Context
 
@@ -101,10 +101,15 @@ tests/
 
 ### Wrapper Decision Model
 
-- Deterministic candidate execution order:
+- Primary deterministic candidate execution order:
   1. `regex`
   2. `layout`
   3. `llm`
+- Secondary fallback pool used only if the primary path is exhausted:
+  - `index`
+  - `heuristic`
+  - `semantic`
+- The secondary pool is intentionally randomized before iteration to avoid privileging one of those recovery strategies permanently.
 - For each attempted strategy execution, capture:
   - strategy name
   - execution status
@@ -114,7 +119,8 @@ tests/
   - chunk page ranges must be valid relative to the source PDF
   - output titles/filenames after the numeric prefix must be unique
 - When produced file count is below `3`, require LLM sensibility review over each output before accepting the result
-- The `llm` fallback step is still a parser strategy invocation, but it is attempted only after earlier strategies fail or are rejected
+- The `llm` fallback step is still a parser strategy invocation, but it is attempted only after earlier primary strategies fail or are rejected
+- If the primary path is exhausted, the wrapper iterates the secondary pool one strategy at a time and stops at the first accepted result
 
 ### LLM Mind Review Policy
 
@@ -190,8 +196,10 @@ tests/
 4. Implement deterministic sensibility checks until tests pass.
 5. Add failing unit tests for LLM mind acceptance/rejection over produced output summaries.
 6. Implement bounded LLM sensibility review until tests pass.
-7. Add CLI/service integration tests for omitted `--strategy` defaulting to adaptive.
-8. Re-run existing direct-strategy tests to prove no regressions.
+7. Add failing unit tests for secondary-pool continuation after the primary cascade runs dry.
+8. Implement secondary-pool fallback behavior until tests pass.
+9. Add CLI/service integration tests for omitted `--strategy` defaulting to adaptive.
+10. Re-run existing direct-strategy tests to prove no regressions.
 
 ## Risks and Mitigations
 
@@ -201,8 +209,8 @@ tests/
   - Mitigation: keep review bounded, use deterministic pre-checks first, and require structured rationale.
 - Default adaptive behavior could surprise users who expect explicit strategy selection.  
   - Mitigation: preserve explicit `--strategy` support and document the default clearly.
-- The `regex -> layout -> llm` cascade may skip potentially useful strategies like `index` or `heuristic`.  
-  - Mitigation: document the chosen scope and leave broader cascades for future planning if needed.
+- The primary `regex -> layout -> llm` cascade may still run dry on some PDFs even though another existing strategy works.  
+  - Mitigation: use a secondary randomized pool of `index`, `heuristic`, and `semantic` before failing.
 
 ## Complexity Tracking
 

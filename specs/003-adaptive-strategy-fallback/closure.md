@@ -13,9 +13,9 @@ Implemented.
 
 ## Results
 
-- Focused wrapper tests: `21 passed`
-- Full suite: `58 passed, 4 deselected`
+- Focused wrapper tests: `22 passed`
+- Full suite: `59 passed, 4 deselected`
 
 ## Outcome
 
-Feature `003` adds an adaptive wrapper over the existing parser flow. It becomes the default path when `--strategy` is omitted, executes the configured fallback order, applies deterministic sensibility checks, and uses bounded local-model review for suspicious low-file-count outputs.
+Feature `003` adds an adaptive wrapper over the existing parser flow. It becomes the default path when `--strategy` is omitted, executes the primary `regex -> layout -> llm` cascade, applies deterministic sensibility checks, and uses bounded local-model review for suspicious low-file-count outputs. If that primary path runs dry, the wrapper now tries a randomized secondary pool of `index`, `heuristic`, and `semantic` before failing.

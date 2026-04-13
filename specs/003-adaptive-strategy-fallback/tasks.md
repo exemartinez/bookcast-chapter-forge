@@ -54,12 +54,14 @@
 
 - [x] T008 [P] [US1] Add unit tests for adaptive attempt ordering and stop-on-first-accepted-result in `tests/unit/test_adaptive_parser_wrapper.py`
 - [x] T009 [P] [US1] Add unit tests for continuing after dependency/runtime failure or empty result in `tests/unit/test_adaptive_parser_wrapper.py`
+- [x] T009a [P] [US1] Add unit test for trying a randomized secondary strategy pool only after `regex -> layout -> llm` runs dry in `tests/unit/test_adaptive_parser_wrapper.py`
 - [x] T010 [P] [US1] Add integration test for omitted `--strategy` defaulting to adaptive flow in `tests/integration/test_pdf_parser_cli.py`
 - [x] T011 [P] [US1] Add integration test for adaptive wrapper orchestration via service/CLI path in `tests/integration/test_pdf_parser_service.py`
 
 ### Implementation for User Story 1
 
 - [x] T012 [US1] Implement `adaptive` wrapper orchestration in `src/bookcast_chapter_forge/services/adaptive_parser_wrapper.py`
+- [x] T012a [US1] Implement secondary randomized fallback over `index`, `heuristic`, and `semantic` after the primary cascade runs dry in `src/bookcast_chapter_forge/services/adaptive_parser_wrapper.py`
 - [x] T013 [US1] Wire omitted `--strategy` to the adaptive wrapper in `src/bookcast_chapter_forge/cli/pdf_parser.py`
 - [x] T014 [US1] Add adaptive wrapper invocation hooks in `src/bookcast_chapter_forge/services/pdf_parser_service.py`
 - [x] T015 [US1] Emit structured adaptive attempt logs and winner selection logs in `src/bookcast_chapter_forge/services/adaptive_parser_wrapper.py`
@@ -205,5 +207,5 @@ With multiple developers:
 
 - This feature is additive by constitution and spec: no refactor of existing classifier strategies is planned.
 - The wrapper is intentionally above classifier level and should orchestrate parser executions rather than absorb classifier behavior.
-- The chosen default cascade is intentionally narrow: `regex -> layout -> llm`.
-- Broader cascades using `index`, `semantic`, or `heuristic` are explicitly out of scope for this feature unless the spec is changed later.
+- The chosen default path is a primary cascade of `regex -> layout -> llm`.
+- If that primary path runs dry, the wrapper uses a secondary randomized pool of `index`, `heuristic`, and `semantic` before failing.
