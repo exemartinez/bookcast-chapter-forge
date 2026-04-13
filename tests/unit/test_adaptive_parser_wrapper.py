@@ -133,6 +133,35 @@ def test_adaptive_wrapper_continues_when_llm_mind_rejects_result(monkeypatch: py
     assert calls == ["regex", "layout"]
 
 
+def test_adaptive_wrapper_tries_randomized_secondary_strategies_after_primary_path_runs_dry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wrapper = AdaptiveParserWrapper(output_writer=OutputWriter(output_dir="output"))
+    calls: list[str] = []
+
+    def fake_shuffle(values: list[str]) -> None:
+        values[:] = ["semantic", "index", "heuristic"]
+
+    monkeypatch.setattr("bookcast_chapter_forge.services.adaptive_parser_wrapper.random.shuffle", fake_shuffle)
+
+    def classify_with_strategy(strategy: str) -> ClassificationResult:
+        calls.append(strategy)
+        if strategy in {"regex", "layout", "llm", "semantic"}:
+            raise ValueError(f"{strategy} failed")
+        return ClassificationResult(chunks=(ChapterChunk(order=1, start_page=10, end_page=15, title="Chapter II"),))
+
+    strategy, _, decision = wrapper.select_result(
+        _book(),
+        _config(adaptive_min_output_files=1),
+        classify_with_strategy=classify_with_strategy,
+        validate_result=lambda book, strategy, result: None,
+    )
+
+    assert strategy == "index"
+    assert calls == ["regex", "layout", "llm", "semantic", "index"]
+    assert [attempt.status for attempt in decision.attempts] == ["failed", "failed", "failed", "failed", "accepted"]
+
+
 def test_adaptive_wrapper_reports_attempt_path_metadata() -> None:
     wrapper = AdaptiveParserWrapper(output_writer=OutputWriter(output_dir="output"))
 

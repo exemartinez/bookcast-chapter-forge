@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 import re
 from typing import Callable
 from urllib import error, request
@@ -40,7 +41,7 @@ class AdaptiveParserWrapper:
         """Run the fallback cascade and return the first accepted classification result."""
         attempts: list[StrategyAttempt] = []
         rejection_warnings: list[str] = []
-        for strategy in config.adaptive_fallback_order:
+        for strategy in self._ordered_fallback_strategies(config):
             try:
                 result = classify_with_strategy(strategy)
                 validate_result(book, strategy, result)
@@ -89,6 +90,13 @@ class AdaptiveParserWrapper:
 
         failure_reason = "; ".join(f"{attempt.strategy}:{attempt.reason}" for attempt in attempts) or "no strategies attempted"
         raise ValueError(f"adaptive wrapper could not produce a sensible result: {failure_reason}")
+
+    def _ordered_fallback_strategies(self, config: ParserConfig) -> tuple[str, ...]:
+        """Run the primary adaptive cascade first, then a randomized secondary fallback pool."""
+        primary = list(config.adaptive_fallback_order)
+        secondary = [strategy for strategy in ("index", "heuristic", "semantic") if strategy not in primary]
+        random.shuffle(secondary)
+        return tuple(primary + secondary)
 
     def _review_result(
         self,
