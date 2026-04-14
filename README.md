@@ -4,7 +4,7 @@ Turn long-form books into NotebookLM-ready PDF chunks for AI-generated podcast w
 
 Current version: `0.4.0`
 
-`bookcast-chapter-forge` is a Python CLI project that reads source PDFs, detects logical chunk boundaries, and exports one PDF per chunk. It currently supports:
+`bookcast-chapter-forge` is a Python CLI project that reads local PDF books, detects logical chunk boundaries, and exports one PDF per chunk. It currently supports:
 
 - interactive launcher flow through `bookcast_forge.sh`
 - fixed-page chunking
@@ -76,7 +76,7 @@ pip install pymupdf4llm
 pip install unstructured
 ```
 
-Install and run the local `llama.cpp` server if you plan to use `llm` directly or allow `adaptive` to reach LLM-backed review:
+Install and run the local `llama.cpp` server if you plan to use `llm` directly:
 
 ```bash
 brew install llama.cpp
@@ -85,7 +85,7 @@ llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080
 
 ## How to Use
 
-The source package lives under `src/`, so run the CLI with `PYTHONPATH=src`.
+The source package lives under `src/`, so the direct parser CLI is run with `PYTHONPATH=src`.
 
 Run the interactive wrapper:
 
@@ -96,7 +96,7 @@ Run the interactive wrapper:
 The interactive wrapper:
 
 - creates `books/` if it does not exist
-- lists supported files from `books/`
+- lists supported PDF files from `books/`
 - lets you choose strategy and core parser options
 - shows a final execution preview before running the parser
 
@@ -190,12 +190,15 @@ The current implementation is intentionally documented as "best-effort generic P
 
 ## Current Scope
 
-The current implemented features focus on PDF parsing and chunk generation.
+The current implementation focuses on PDF parsing and chunk generation.
 
 - Input: local PDF files
 - Output: one PDF per chunk in `output/`
+- Entry points:
+  - `./bookcast_forge.sh` for guided interactive runs
+  - `python -m bookcast_chapter_forge.cli.pdf_parser` for direct scripted runs
 - Strategies:
-  - `adaptive` (default wrapper)
+  - `adaptive` (default wrapper strategy)
   - `fixed`
   - `regex`
   - `index`
@@ -203,6 +206,7 @@ The current implemented features focus on PDF parsing and chunk generation.
   - `semantic`
   - `heuristic`
   - `llm`
+  - `model` (experimental, direct use only)
 
 ## Project Structure
 
@@ -214,6 +218,17 @@ books/
 output/
 specs/
 ```
+
+## Disclaimer
+
+The `books/` directory is not distributed with this repository because bundling full source books may create copyright or author-rights conflicts.
+
+Validation was still performed against real-world materials during development, including:
+
+- several technical books
+- multiple Christian Bible editions
+
+Those Bible editions were intentionally useful test cases because they often contain uncommon editorial structures, front matter, book-level boundaries, and formatting patterns that stress generic chapter-detection logic more than ordinary prose books.
 
 ## Configuration
 
@@ -233,7 +248,7 @@ The chunking behavior is configured in `configs/config.yaml`.
 - `pymupdf4llm`: required for `layout`
 - `unstructured`: required for `semantic`
 - local `llama.cpp` `llama-server`: required for `llm`
-- local `llama.cpp` `llama-server`: also required when `adaptive` reaches low-file-count LLM sensibility review or the `llm` fallback step
+- local `llama.cpp` `llama-server`: also required when you explicitly run the `llm` strategy
 
 ## Current Behavior
 
@@ -263,6 +278,7 @@ What `v0.4.0` does not guarantee:
 - correct chapter detection when TOC text, page labels, hyperlinks, and visual headings disagree
 - correct semantic section extraction on every PDF, even when `unstructured` is installed
 - perfect local-LLM review; `llm` is limited to the structured packet derived from `layout`
+- reliable results from the `model` strategy; it remains experimental
 - multi-file interactive batch processing in one wrapper run
 
 ## Testing
@@ -275,6 +291,7 @@ Run the full suite:
 
 Current automated coverage includes:
 
+- interactive launcher flow
 - config loading
 - fixed-page chunk generation
 - regex and index classifier logic
@@ -316,6 +333,10 @@ The current implementation was validated against:
 ## Next Steps
 
 - strengthen real-book evaluation for `layout`, `heuristic`, and `llm`
-- improve package/install ergonomics so `PYTHONPATH=src` is no longer needed
-- add EPUB ingestion
+- improve package/install ergonomics so `PYTHONPATH=src` is no longer needed for the direct CLI path
+- extend the interactive wrapper beyond single-file runs
 - add NotebookLM export formatting beyond PDF chunking
+
+## License
+
+This project is licensed under the MIT License.
