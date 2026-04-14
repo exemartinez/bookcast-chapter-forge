@@ -23,8 +23,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--config", default="configs/config.yaml", help="Path to the YAML config file")
     parser.add_argument(
         "--strategy",
-        choices=["fixed", "regex", "index", "layout", "semantic", "model", "heuristic", "llm"],
-        default="fixed",
+        choices=["adaptive", "fixed", "regex", "index", "layout", "semantic", "model", "heuristic", "llm"],
+        default="adaptive",
     )
     parser.add_argument("--output-dir", default="output")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable output")
@@ -56,6 +56,7 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "source": str(item.source),
                     "chunk_count": item.chunk_count,
+                    "selected_strategy": item.strategy,
                     "output_files": [str(path) for path in item.output_files],
                 }
                 for item in processed

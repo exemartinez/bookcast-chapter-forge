@@ -61,3 +61,15 @@ llm:
   prompt_instructions: >-
     Prefer rejecting table of contents or preface material when the visible heading
     does not look like the title of a real body chapter.
+
+adaptive:
+  fallback_order:
+    - regex
+    - layout
+    - llm
+  min_output_files: 3
+  prompt_instructions: >-
+    Reject suspicious output sets. The output filenames after the leading numeric
+    prefix must be unique, chunk page ranges must be valid relative to the source PDF,
+    and when fewer than three files are produced you should judge whether the result
+    looks sensible or likely wrong.

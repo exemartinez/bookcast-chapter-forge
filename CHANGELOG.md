@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.0 - 2026-04-13
+
+Additive adaptive-wrapper release for `bookcast-chapter-forge`.
+
+Included:
+
+- `adaptive` wrapper as the default parser path when `--strategy` is omitted
+- primary adaptive cascade of `regex -> layout -> llm`
+- deterministic output sensibility checks for invalid page spans and duplicate normalized output suffixes
+- bounded local `llama.cpp` review for suspicious low-file-count adaptive results
+- structured adaptive attempt/winner diagnostics in CLI and service output
+- secondary recovery pool over `index`, `heuristic`, and `semantic` when the primary adaptive path runs dry
+
+Important limitations:
+
+- adaptive still relies on the quality of the underlying strategies rather than replacing them
+- duplicate normalized output suffixes remain a hard rejection signal in the current adaptive policy
+- the secondary fallback pool is randomized, so the recovery order among `index`, `heuristic`, and `semantic` is not fixed
+- `model` remains available directly but is not part of the adaptive recovery path
+- chapter extraction remains heuristic and PDF-dependent even when adaptive succeeds
+
 ## 0.2.0 - 2026-04-08
 
 Additive heuristic expansion for `bookcast-chapter-forge`.

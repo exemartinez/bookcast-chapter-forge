@@ -59,6 +59,9 @@ class ParserConfig:
     llm_review_window: int = 1
     llm_max_excerpt_chars: int = 300
     llm_prompt_instructions: str = ""
+    adaptive_fallback_order: tuple[str, ...] = ("regex", "layout", "llm")
+    adaptive_min_output_files: int = 3
+    adaptive_prompt_instructions: str = ""
 
 
 @dataclass(frozen=True)
@@ -117,3 +120,30 @@ class ClassificationResult:
     chunks: tuple[ChapterChunk, ...]
     warnings: tuple[str, ...] = ()
     metadata: dict[str, str | int] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class StrategyAttempt:
+    """Represents one attempted strategy execution inside the adaptive wrapper."""
+
+    strategy: str
+    status: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class OutputSensibilityReview:
+    """Represents the wrapper-level judgment for one attempted parser result."""
+
+    accepted: bool
+    rationale: str
+    review_source: str
+
+
+@dataclass(frozen=True)
+class AdaptiveDecision:
+    """Represents the final adaptive orchestration outcome and its attempt path."""
+
+    attempts: tuple[StrategyAttempt, ...]
+    selected_strategy: str
+    review: OutputSensibilityReview

@@ -15,6 +15,7 @@ from bookcast_chapter_forge.classifiers.semantic_section_classifier import Seman
 from bookcast_chapter_forge.domain.entities import BookDocument, ClassificationResult
 from bookcast_chapter_forge.infrastructure.logging import EVENT_CLASSIFICATION_WARNING, EventLogger
 from bookcast_chapter_forge.infrastructure.pdf_reader import PdfReaderAdapter
+from bookcast_chapter_forge.services.adaptive_parser_wrapper import AdaptiveParserWrapper
 from bookcast_chapter_forge.services.config_loader import ConfigLoader
 from bookcast_chapter_forge.services.output_writer import OutputWriter
 
@@ -43,6 +44,7 @@ class PdfParserService:
         self.pdf_reader = pdf_reader or PdfReaderAdapter()
         self.output_writer = output_writer or OutputWriter()
         self.logger = logger or EventLogger()
+        self.adaptive_wrapper = AdaptiveParserWrapper(output_writer=self.output_writer, logger=self.logger)
         layout_classifier = LayoutAwareClassifier(logger=self.logger)
         self.classifiers = classifiers or {
             "fixed": FixedPageClassifier(),
@@ -68,24 +70,33 @@ class PdfParserService:
         """Classify one book and write all resulting chunk PDFs to disk."""
         if path.suffix.lower() != ".pdf":
             raise ValueError(f"{path} is not a PDF")
-        classifier = self.classifiers[strategy]
         self.logger.progress("read_pdf", path=str(path), strategy=strategy)
         book = self.pdf_reader.read_book(path)
         self._validate_book(book, strategy)
-        result = classifier.classify(book, config)
-        self._validate_classification_result(book, strategy, result)
+        actual_strategy = strategy
+        if strategy == "adaptive":
+            actual_strategy, result, _ = self.adaptive_wrapper.select_result(
+                book,
+                config,
+                classify_with_strategy=lambda candidate_strategy: self.classifiers[candidate_strategy].classify(book, config),
+                validate_result=self._validate_classification_result,
+            )
+        else:
+            classifier = self.classifiers[strategy]
+            result = classifier.classify(book, config)
+            self._validate_classification_result(book, strategy, result)
         for warning in result.warnings:
-            self.logger.warning(EVENT_CLASSIFICATION_WARNING, path=str(path), strategy=strategy, message=warning)
-        self.logger.progress("classification_complete", path=str(path), chunks=len(result.chunks), strategy=strategy)
+            self.logger.warning(EVENT_CLASSIFICATION_WARNING, path=str(path), strategy=actual_strategy, message=warning)
+        self.logger.progress("classification_complete", path=str(path), chunks=len(result.chunks), strategy=actual_strategy)
         if result.metadata:
-            self.logger.progress("classification_metadata", path=str(path), strategy=strategy, metadata=result.metadata)
+            self.logger.progress("classification_metadata", path=str(path), strategy=actual_strategy, metadata=result.metadata)
         try:
             output_files = tuple(self.output_writer.write_book_chunks(book, result.chunks))
         except KeyboardInterrupt:
             self.logger.error("processing_interrupted", path=str(path))
             raise
         self.logger.info("write_complete", path=str(path), outputs=len(output_files))
-        return ProcessedBook(source=path, output_files=output_files, strategy=strategy, chunk_count=len(output_files))
+        return ProcessedBook(source=path, output_files=output_files, strategy=actual_strategy, chunk_count=len(output_files))
 
     def _validate_book(self, book: BookDocument, strategy: str) -> None:
         """Reject empty or non-extractable documents before classification begins."""
@@ -98,7 +109,7 @@ class PdfParserService:
 
     def _validate_classification_result(self, book: BookDocument, strategy: str, result: ClassificationResult) -> None:
         """Protect the writer from obviously invalid classifier outputs."""
-        if strategy == "fixed":
+        if strategy in {"fixed", "adaptive"}:
             return
         if not result.chunks:
             raise ValueError("The classifier did not return any chapter chunks")

@@ -7,6 +7,9 @@ EVENT_LAYOUT_EVIDENCE = "layout_evidence"
 EVENT_BOUNDARY_DECISION = "boundary_decision"
 EVENT_LLM_REVIEW = "llm_review"
 EVENT_CLASSIFICATION_WARNING = "classification_warning"
+EVENT_ADAPTIVE_ATTEMPT = "adaptive_attempt"
+EVENT_ADAPTIVE_REVIEW = "adaptive_review"
+EVENT_ADAPTIVE_WINNER = "adaptive_winner"
 
 
 class EventLogger:
