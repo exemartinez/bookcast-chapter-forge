@@ -16,49 +16,44 @@ Current version: `0.4.0`
 - local LLM review over layout-derived cuts
 - adaptive wrapper fallback over parser strategies
 
-## Feature Status
+# A note from the author
 
-Feature `001-pdf-chapter-classifier` is closed as `v0.1.0`.
-Feature `002-heuristic-chapter-detection` is implemented.
-Feature `003-adaptive-strategy-fallback` adds the adaptive default wrapper flow.
-Feature `005-interactive-cli-wrapper` adds the interactive launcher over the existing parser.
+This project was built to deliver a complete, usable system while applying Spec-Driven Development (SDD) using SpecKit.
 
-That version should be treated as a pragmatic baseline, not a universally reliable chapter parser. Results depend heavily on the PDF's internal structure:
+The goal was not to treat SDD as a theoretical exercise, but to design and implement an end-to-end application around a concrete problem: turning long-form documents into structured, machine-consumable units. This work also explores the tradeoffs between structured approaches (SpecKit) and more flexible workflows (e.g., OpenCode), while keeping the outcome grounded in practical use.
 
-- some PDFs work well because they expose usable TOCs, hyperlinks, outlines, or consistent heading typography
-- some PDFs work only partially
-- some PDFs will still fail to segment cleanly even when they are human-readable
+The system integrates a local LLM setup using `llama.cpp` with a lightweight model (`tinydolphin`). Here, the model is not used for generic generation, but as a constrained decision layer that evaluates and selects parsing strategies based on the characteristics of the input document.
 
-The current implementation is intentionally documented as "best-effort generic PDF chunking" rather than "guaranteed chapter extraction."
+Everything runs locally, avoiding external API dependencies and token-based costs, while maintaining practical performance. Compared to cloud-based solutions (e.g., OpenAI or Adobe tools), this approach prioritizes control, cost-efficiency, and reproducibility.
 
-## Current Scope
+---
 
-The current implemented features focus on PDF parsing and chunk generation.
+# Why this matters
 
-- Input: local PDF files
-- Output: one PDF per chunk in `output/`
-- Strategies:
-  - `adaptive` (default wrapper)
-  - `fixed`
-  - `regex`
-  - `index`
-  - `layout`
-  - `semantic`
-  - `heuristic`
-  - `llm`
+Parsing real-world PDFs is not trivial. Many documents are poorly structured, inconsistent, or not designed for automated processing.
 
-## Project Structure
+This tool focuses on extracting a **first-level structure** (e.g., chapters) from long-form documents such as books, even under irregular formatting. The goal is to make these documents directly usable for downstream AI workflows.
 
-```text
-src/bookcast_chapter_forge/
-tests/
-configs/config.yaml
-books/
-output/
-specs/
-```
+A practical example is integration with tools like NotebookLM:
 
-## Setup
+- instead of processing an entire book at once  
+- each chapter can be handled independently  
+- improving focus, accuracy, and relevance of generated outputs  
+
+This reduces noise and helps preserve important details that would otherwise be lost in large contexts.
+
+The current version focuses on first-level segmentation. The same approach can be applied iteratively to build progressively finer structures (sections, paragraphs), resulting in a hierarchical representation of the content.
+
+Such a structure enables multiple downstream uses:
+
+- LLM-based analysis (GPT, BERT-style models)  
+- content generation pipelines  
+- multimedia workflows  
+
+For example, extracting the paragraphs of a chapter and feeding them sequentially into a video generation pipeline could produce a sequence of scenes that can later be composed into a full narrative.
+
+This project establishes a practical foundation for building those kinds of pipelines.
+## How to Install
 
 Create and use the local virtual environment:
 
@@ -66,6 +61,12 @@ Create and use the local virtual environment:
 python3 -m venv bookcast-ve
 source bookcast-ve/bin/activate
 pip install -r requirements.txt
+```
+
+Make the interactive launcher executable:
+
+```bash
+chmod +x bookcast_forge.sh
 ```
 
 Install optional strategy dependencies only if you plan to use them:
@@ -82,7 +83,7 @@ brew install llama.cpp
 llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080
 ```
 
-## Usage
+## How to Use
 
 The source package lives under `src/`, so run the CLI with `PYTHONPATH=src`.
 
@@ -170,6 +171,48 @@ PYTHONPATH=src python -m bookcast_chapter_forge.cli.pdf_parser \
   --config configs/config.yaml \
   --strategy fixed \
   --output-dir output
+```
+
+## Feature Status
+
+Feature `001-pdf-chapter-classifier` is closed as `v0.1.0`.
+Feature `002-heuristic-chapter-detection` is implemented.
+Feature `003-adaptive-strategy-fallback` adds the adaptive default wrapper flow.
+Feature `005-interactive-cli-wrapper` adds the interactive launcher over the existing parser.
+
+That version should be treated as a pragmatic baseline, not a universally reliable chapter parser. Results depend heavily on the PDF's internal structure:
+
+- some PDFs work well because they expose usable TOCs, hyperlinks, outlines, or consistent heading typography
+- some PDFs work only partially
+- some PDFs will still fail to segment cleanly even when they are human-readable
+
+The current implementation is intentionally documented as "best-effort generic PDF chunking" rather than "guaranteed chapter extraction."
+
+## Current Scope
+
+The current implemented features focus on PDF parsing and chunk generation.
+
+- Input: local PDF files
+- Output: one PDF per chunk in `output/`
+- Strategies:
+  - `adaptive` (default wrapper)
+  - `fixed`
+  - `regex`
+  - `index`
+  - `layout`
+  - `semantic`
+  - `heuristic`
+  - `llm`
+
+## Project Structure
+
+```text
+src/bookcast_chapter_forge/
+tests/
+configs/config.yaml
+books/
+output/
+specs/
 ```
 
 ## Configuration
