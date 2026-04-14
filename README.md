@@ -2,10 +2,11 @@
 
 Turn long-form books into NotebookLM-ready PDF chunks for AI-generated podcast workflows.
 
-Current version: `0.3.0`
+Current version: `0.4.0`
 
 `bookcast-chapter-forge` is a Python CLI project that reads source PDFs, detects logical chunk boundaries, and exports one PDF per chunk. It currently supports:
 
+- interactive launcher flow through `bookcast_forge.sh`
 - fixed-page chunking
 - generic regex-based chapter/book-start detection for English books
 - generic index/contents-driven chunking with page-offset inference for English books
@@ -20,6 +21,7 @@ Current version: `0.3.0`
 Feature `001-pdf-chapter-classifier` is closed as `v0.1.0`.
 Feature `002-heuristic-chapter-detection` is implemented.
 Feature `003-adaptive-strategy-fallback` adds the adaptive default wrapper flow.
+Feature `005-interactive-cli-wrapper` adds the interactive launcher over the existing parser.
 
 That version should be treated as a pragmatic baseline, not a universally reliable chapter parser. Results depend heavily on the PDF's internal structure:
 
@@ -83,6 +85,19 @@ llama-server -hf ggml-org/gemma-3-1b-it-GGUF --port 8080
 ## Usage
 
 The source package lives under `src/`, so run the CLI with `PYTHONPATH=src`.
+
+Run the interactive wrapper:
+
+```bash
+./bookcast_forge.sh
+```
+
+The interactive wrapper:
+
+- creates `books/` if it does not exist
+- lists supported files from `books/`
+- lets you choose strategy and core parser options
+- shows a final execution preview before running the parser
 
 Split a single PDF with the default adaptive wrapper:
 
@@ -179,7 +194,7 @@ The chunking behavior is configured in `configs/config.yaml`.
 
 ## Current Behavior
 
-What `v0.3.0` does well:
+What `v0.4.0` does well:
 
 - splits PDFs deterministically with `fixed`
 - handles many ordinary English books with explicit `Chapter`, `Part`, or `Section` headings via `regex`
@@ -193,8 +208,10 @@ What `v0.3.0` does well:
 - can review layout-derived cuts with a bounded local LLM prompt when `llm` is selected
 - can use `adaptive` as the default parser path and automatically try the primary cascade `regex -> layout -> llm`
 - if that primary adaptive path runs dry, it can continue into a secondary recovery pool containing `index`, `heuristic`, and `semantic`
+- can launch the parser through a no-argument interactive wrapper instead of requiring a hand-written command
+- can create `books/` automatically when the interactive launcher is used on a fresh repo checkout
 
-What `v0.3.0` does not guarantee:
+What `v0.4.0` does not guarantee:
 
 - exact chapter segmentation for arbitrary PDFs
 - correct front-matter handling across all books
@@ -203,6 +220,7 @@ What `v0.3.0` does not guarantee:
 - correct chapter detection when TOC text, page labels, hyperlinks, and visual headings disagree
 - correct semantic section extraction on every PDF, even when `unstructured` is installed
 - perfect local-LLM review; `llm` is limited to the structured packet derived from `layout`
+- multi-file interactive batch processing in one wrapper run
 
 ## Testing
 
