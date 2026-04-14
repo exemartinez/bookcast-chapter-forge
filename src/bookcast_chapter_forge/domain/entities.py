@@ -147,3 +147,34 @@ class AdaptiveDecision:
     attempts: tuple[StrategyAttempt, ...]
     selected_strategy: str
     review: OutputSensibilityReview
+
+
+@dataclass(frozen=True)
+class SelectableBookEntry:
+    """Represents one supported book file shown in the interactive picker."""
+
+    index: int
+    path: Path
+    label: str
+
+
+@dataclass(frozen=True)
+class InteractiveRunRequest:
+    """Carries the user-confirmed selections for one interactive parser run."""
+
+    input_path: Path
+    strategy: str
+    config_path: Path
+    output_dir: Path
+    json_output: bool
+
+
+@dataclass(frozen=True)
+class ExecutionPreview:
+    """Represents the final execution summary shown before interactive confirmation."""
+
+    input_path: Path
+    strategy: str
+    config_path: Path
+    output_dir: Path
+    json_output: bool

@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0 - 2026-04-14
+
+Additive interactive-wrapper release for `bookcast-chapter-forge`.
+
+Included:
+
+- `bookcast_forge.sh` launcher for no-argument interactive runs
+- interactive file selection from the default `books/` directory
+- automatic `books/` directory creation when missing
+- interactive selection of strategy, config path, output directory, and JSON mode
+- explicit execution preview and confirmation before parser execution
+- delegation to the existing parser backend without changing the direct parser CLI
+
+Important limitations:
+
+- the wrapper currently targets single-file interactive runs
+- supported file discovery follows the parser's currently supported source formats
+- advanced parser options beyond the core interactive flow still require the direct CLI
+
 ## 0.3.0 - 2026-04-13
 
 Additive adaptive-wrapper release for `bookcast-chapter-forge`.
