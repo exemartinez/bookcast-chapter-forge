@@ -49,3 +49,43 @@ def test_processes_all_pdfs_in_books_dir(blank_pdf_factory, tmp_path: Path) -> N
     processed = service.process("regex", config_path, books_dir=books_dir)
 
     assert len(processed) == 2
+
+
+def test_processes_single_pdf_with_optional_strategy(book_document_factory, tmp_path: Path) -> None:
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text("fixed_page:\n  max_pages_per_chunk: 2\n", encoding="utf-8")
+    book = book_document_factory("single.pdf", ["Chapter 1", "Body"])
+
+    class StrategyStub(ChapterClassifier):
+        def __init__(self, strategy_name: str) -> None:
+            self._strategy_name = strategy_name
+
+        @property
+        def strategy_name(self) -> str:
+            return self._strategy_name
+
+        def classify(self, book, config: ParserConfig) -> ClassificationResult:
+            return ClassificationResult(chunks=(ChapterChunk(order=1, start_page=1, end_page=book.page_count, title="Chunk"),))
+
+    class BookReaderStub:
+        def read_book(self, path: Path) -> BookDocument:
+            return book
+
+    classifiers = {
+        "fixed": StubClassifier(),
+        "regex": StubClassifier(),
+        "index": StubClassifier(),
+        "layout": StrategyStub("layout"),
+        "semantic": StrategyStub("semantic"),
+        "heuristic": StrategyStub("heuristic"),
+        "llm": StrategyStub("llm"),
+    }
+    service = PdfParserService(
+        output_writer=OutputWriter(output_dir=tmp_path / "out"),
+        pdf_reader=BookReaderStub(),
+        classifiers=classifiers,
+    )
+
+    for strategy in ("layout", "semantic", "heuristic", "llm"):
+        processed = service.process(strategy, config_path, input_path=book.path)
+        assert processed[0].chunk_count == 1

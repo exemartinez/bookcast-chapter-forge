@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.0 - 2026-04-08
+
+Additive heuristic expansion for `bookcast-chapter-forge`.
+
+Included:
+
+- `layout` classifier using page-local typography evidence
+- `semantic` classifier using `unstructured` title/header elements
+- deterministic `heuristic` classifier that integrates layout, semantic, regex, and index-derived evidence
+- `llm` classifier that reviews layout-derived cuts through a local `Ollama` runtime with `phi3.5`
+- expanded config support, CLI/service registration, structured logging diagnostics, and new classifier tests
+
+Important limitations:
+
+- all advanced strategies remain PDF-dependent and best-effort
+- `semantic` can fail to find usable boundaries if semantic title extraction is weak
+- `heuristic` is deterministic but can still produce wrong boundaries on exotic PDFs
+- `llm` is a bounded reviewer over `layout`, not a whole-document autonomous parser
+
 ## 0.1.0 - 2026-04-07
 
 Initial public baseline for `bookcast-chapter-forge`.

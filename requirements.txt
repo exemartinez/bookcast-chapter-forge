@@ -3,3 +3,13 @@ PyYAML==6.0.3
 pytest==8.4.2
 pytest-cov==7.0.0
 uv==0.11.3
+
+# Optional 002 strategy dependencies:
+# pymupdf4llm enables the layout-aware classifier.
+# unstructured enables the semantic classifier.
+# langchain/langgraph are retained for the legacy experimental model classifier.
+# llama.cpp-backed llm review uses the local OpenAI-compatible HTTP API and does not require an extra Python client.
+pymupdf4llm==1.27.2.2
+unstructured==0.22.18
+langchain==1.2.15
+langgraph==1.1.6
